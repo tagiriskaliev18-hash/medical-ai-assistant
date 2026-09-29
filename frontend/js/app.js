@@ -53,6 +53,11 @@ class MedicalApp {
         this.closeAllModals();
       }
     });
+
+    // Reactive update on model change
+    window.addEventListener('llm-model-changed', () => {
+      this.updateProviderBadge();
+    });
   }
 
   setupVoice() {
@@ -69,7 +74,29 @@ class MedicalApp {
           input.value = finalTranscript;
           input.dispatchEvent(new Event('input'));
         }
+      }, (isListening, errorMsg) => {
+        const micBtn = document.getElementById('mic-btn');
+        if (micBtn) {
+          if (isListening) {
+            micBtn.classList.add('bg-red-600', 'text-white', 'recording-pulse-ring');
+            micBtn.classList.remove('bg-slate-800', 'text-sky-400');
+          } else {
+            micBtn.classList.remove('bg-red-600', 'text-white', 'recording-pulse-ring');
+            micBtn.classList.add('bg-slate-800', 'text-sky-400');
+          }
+        }
+        if (errorMsg) {
+          console.warn('Voice state notice:', errorMsg);
+        }
       });
+
+      window.medicalSpeechInstance = this.voiceAssistant;
+
+      // Attach HTML5 visualizer canvas if present
+      const canvas = document.getElementById('voice-canvas');
+      if (canvas && this.voiceAssistant.attachCanvas) {
+        this.voiceAssistant.attachCanvas(canvas);
+      }
     }
   }
 
@@ -114,17 +141,35 @@ class MedicalApp {
 
   updateProviderBadge() {
     const badge = document.getElementById('current-provider-badge');
+    const headerPill = document.getElementById('header-model-pill');
+    const pickerCurrent = document.getElementById('model-picker-current-name');
+
     if (badge && window.llmClient) {
       const p = window.llmClient.config.provider;
-      const map = {
-        pollinations: 'Pollinations AI (Free)',
-        groq: 'Groq (Llama-3)',
-        openrouter: 'OpenRouter',
-        ollama: 'Локальный Ollama',
-        backend: 'FastAPI Backend',
-        custom: 'Custom LLM API'
-      };
-      badge.innerText = map[p] || p;
+      const m = window.llmClient.config.model;
+      const activeInfo = typeof window.llmClient.getActiveModelInfo === 'function' ? window.llmClient.getActiveModelInfo() : null;
+
+      let label = m;
+      if (activeInfo) {
+        label = activeInfo.name;
+      } else {
+        const map = {
+          multillm: `Multi-LLM (${m})`,
+          pollinations: 'Pollinations EBM (Free)',
+          groq: `Groq (${m})`,
+          openrouter: `OpenRouter (${m})`,
+          ollama: `Ollama (${m})`,
+          backend: 'FastAPI Backend',
+          custom: `Custom API (${m})`
+        };
+        label = map[p] || m || p;
+      }
+
+      badge.innerText = label;
+      if (pickerCurrent) pickerCurrent.innerText = label;
+      if (headerPill) {
+        headerPill.title = `Активная модель: ${label}. Нажмите для смены`;
+      }
     }
   }
 
@@ -405,6 +450,20 @@ class MedicalApp {
     text = text.replace(/^\s*\-\s+(.*$)/gim, '<li class="ml-4 list-disc text-slate-200">$1</li>');
     text = text.replace(/^\s*\d+\.\s+(.*$)/gim, '<li class="ml-4 list-decimal text-slate-200">$1</li>');
     text = text.replace(/\n\n/g, '<br/><br/>');
+
+    // Clinical Sections: Patient Communication vs Doctor Action Plan
+    text = text.replace(/(?:<strong class="text-white">)?(?:🗣️|🗣)?\s*(?:Для пациента|Пациенту):?(?:<\/strong>)?([\s\S]*?)(?=(?:<strong class="text-white">)?(?:👨‍⚕️|👨)?\s*(?:Для врача|Врачу)|$)/gi, (match, body) => {
+      const trimmed = body.trim();
+      if (!trimmed) return match;
+      return `<div class="section-patient"><div class="flex items-center gap-1.5 font-bold text-sky-300 text-xs mb-1.5 uppercase tracking-wide"><span>🗣️</span> Пациенту (понятным языком):</div>${trimmed}</div>`;
+    });
+
+    text = text.replace(/(?:<strong class="text-white">)?(?:👨‍⚕️|👨)?\s*(?:Для врача|Врачу):?(?:<\/strong>)?([\s\S]*?)$/gi, (match, body) => {
+      const trimmed = body.trim();
+      if (!trimmed) return match;
+      return `<div class="section-doctor"><div class="flex items-center gap-1.5 font-bold text-sky-400 text-xs mb-1.5 uppercase tracking-wide"><span>👨‍⚕️</span> Дежурному врачу (диагностика & профиль):</div>${trimmed}</div>`;
+    });
+
     return text;
   }
 
@@ -602,7 +661,19 @@ class MedicalApp {
     const baseContainer = document.getElementById('setting-base-container');
     const modelInput = document.getElementById('setting-model');
 
-    if (provider === 'pollinations') {
+    if (provider === 'multillm') {
+      if (keyContainer) {
+        keyContainer.classList.remove('hidden');
+        const keyInp = document.getElementById('setting-api-key');
+        if (keyInp) keyInp.placeholder = 'sk-... (Ключ шлюза / CheapVibeCode, если требуется)';
+      }
+      if (baseContainer) {
+        baseContainer.classList.remove('hidden');
+        const baseInp = document.getElementById('setting-base-url');
+        if (baseInp) baseInp.placeholder = 'https://api.openai.com/v1 или URL вашего шлюза';
+      }
+      if (modelInput && (!modelInput.value || modelInput.value === 'openai')) modelInput.value = 'deepseek-v4-pro';
+    } else if (provider === 'pollinations') {
       if (keyContainer) keyContainer.classList.add('hidden');
       if (baseContainer) baseContainer.classList.add('hidden');
       if (modelInput && !modelInput.value) modelInput.value = 'openai';
@@ -1036,6 +1107,111 @@ class MedicalApp {
     this.sendMessage(text);
   }
 
+  // --- MULTI-LLM MODEL PICKER MODAL ---
+  openModelPickerModal() {
+    const modal = document.getElementById('model-picker-modal');
+    if (modal) {
+      this.currentModelFilter = this.currentModelFilter || 'all';
+      this.renderModelPickerList(this.currentModelFilter);
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  closeModelPickerModal() {
+    const modal = document.getElementById('model-picker-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  filterModelPicker(tier) {
+    this.currentModelFilter = tier;
+    ['all', 'flash', 'pro', 'heavy'].forEach(t => {
+      const tab = document.getElementById(`tab-model-${t}`);
+      if (tab) {
+        if (t === tier) {
+          tab.className = 'px-3 py-1.5 rounded-lg bg-sky-600 text-white font-semibold transition';
+        } else {
+          tab.className = 'px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition';
+        }
+      }
+    });
+    this.renderModelPickerList(tier);
+  }
+
+  renderModelPickerList(filterTier = 'all') {
+    const container = document.getElementById('model-picker-list');
+    if (!container || !window.llmClient) return;
+
+    const catalog = typeof window.llmClient.getMultiLLMModels === 'function' ? window.llmClient.getMultiLLMModels() : {};
+    const activeModel = window.llmClient.config.model;
+    const activeProvider = window.llmClient.config.provider;
+
+    let html = '';
+
+    // If 'all' or special, optionally show Free Pollinations option
+    if (filterTier === 'all' || filterTier === 'flash') {
+      const isPollActive = activeProvider === 'pollinations';
+      html += `
+        <div onclick="medicalApp.selectModelFromPicker('openai', 'pollinations')" class="p-3 rounded-xl border ${isPollActive ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500' : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'} transition cursor-pointer flex items-center justify-between">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-bold text-white text-sm">Pollinations EBM</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">Бесплатно / Без ключа</span>
+              ${isPollActive ? '<span class="text-xs text-sky-400 font-bold ml-1">● Активна</span>' : ''}
+            </div>
+            <p class="text-[11px] text-slate-400">Базовый клинический ассистент доказательной медицины (работает на любом устройстве)</p>
+          </div>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-bold ${isPollActive ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'} transition">
+            ${isPollActive ? 'Выбрана' : 'Выбрать'}
+          </button>
+        </div>
+      `;
+    }
+
+    Object.entries(catalog).forEach(([mId, meta]) => {
+      if (filterTier !== 'all' && meta.tier !== filterTier) return;
+      const isActive = activeModel === mId && activeProvider === 'multillm';
+
+      let tierBadge = '';
+      if (meta.tier === 'flash') tierBadge = '<span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/60">🚀 Flash</span>';
+      else if (meta.tier === 'pro') tierBadge = '<span class="text-[10px] px-1.5 py-0.2 rounded bg-sky-950 text-sky-300 border border-sky-800/60">🧠 Pro Консилиум</span>';
+      else if (meta.tier === 'heavy') tierBadge = '<span class="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800/60">💎 Opus / Heavy</span>';
+
+      html += `
+        <div onclick="medicalApp.selectModelFromPicker('${mId}', 'multillm')" class="p-3 rounded-xl border ${isActive ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500' : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'} transition cursor-pointer flex items-center justify-between">
+          <div class="flex-1 pr-3">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-bold text-white text-sm">${meta.name}</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">${meta.badge}</span>
+              ${tierBadge}
+              ${isActive ? '<span class="text-xs text-sky-400 font-bold ml-1">● Активна</span>' : ''}
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">${meta.desc}</p>
+          </div>
+          <button class="px-3 py-1.5 rounded-lg text-xs font-bold ${isActive ? 'bg-sky-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'} transition whitespace-nowrap">
+            ${isActive ? 'Выбрана' : 'Выбрать'}
+          </button>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  selectModelFromPicker(modelId, provider = 'multillm') {
+    if (!window.llmClient) return;
+    if (typeof window.llmClient.setModel === 'function') {
+      window.llmClient.setModel(modelId, provider);
+    } else {
+      window.llmClient.saveConfig({ model: modelId, provider });
+    }
+    this.updateProviderBadge();
+    this.closeModelPickerModal();
+  }
+
   closeAllModals() {
     this.closeSettingsModal();
     this.closeSummaryModal();
@@ -1043,6 +1219,7 @@ class MedicalApp {
     this.closeLabsModal();
     this.closeDrugsModal();
     this.closeSOAPModal();
+    this.closeModelPickerModal();
     if (window.proceduresManager) {
       window.proceduresManager.closeModal();
     }

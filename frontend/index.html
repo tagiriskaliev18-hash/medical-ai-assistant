@@ -31,7 +31,11 @@
             <h1 class="text-sm font-bold text-white leading-tight">ИИ Доктор</h1>
             <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-semibold">EBM</span>
           </div>
-          <p id="current-provider-badge" class="text-[11px] text-emerald-400 font-medium">Бесплатная нейросеть EBM</p>
+          <button id="header-model-pill" onclick="medicalApp.openModelPickerModal()" class="model-pill mt-0.5" title="Нажмите, чтобы сменить клиническую нейросеть">
+            <span class="model-dot"></span>
+            <span id="current-provider-badge">DeepSeek V4 Pro</span>
+            <span class="text-[9px] opacity-70">▼</span>
+          </button>
         </div>
       </div>
       
@@ -41,6 +45,12 @@
           <span>🚨</span>
           <span class="hidden sm:inline">112 / 103</span>
         </a>
+
+        <!-- Model Switcher Quick Button -->
+        <button onclick="medicalApp.openModelPickerModal()" class="px-2 py-1.5 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-300 text-xs font-semibold flex items-center gap-1 transition border border-sky-800/60 shadow-sm" title="Пул моделей Multi-LLM">
+          <span>⚡</span>
+          <span class="hidden sm:inline">Модели</span>
+        </button>
 
         <!-- Export Medical Handoff for 103/112 -->
         <button onclick="medicalApp.showEmergencySummaryModal()" class="w-9 h-9 sm:w-auto sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1 transition border border-slate-700" title="Сводка для скорой помощи">
@@ -162,19 +172,39 @@
         </button>
       </div>
 
-      <!-- Live Voice Banner -->
-      <div id="voice-banner" class="hidden items-center justify-between px-4 py-2 mb-2 bg-sky-900/40 rounded-xl border border-sky-500/30 text-xs shadow-lg">
-        <div class="flex items-center gap-3 w-full">
-          <div id="voice-bars" class="flex items-center h-4 flex-shrink-0">
-            <span class="wave-bar"></span>
-            <span class="wave-bar"></span>
-            <span class="wave-bar"></span>
-            <span class="wave-bar"></span>
-            <span class="wave-bar"></span>
+      <!-- Live Clinical Voice Dock & Canvas Waveform Visualizer -->
+      <div id="voice-banner" class="hidden flex-col gap-2 p-3 mb-2 bg-slate-900/95 border border-sky-500/40 rounded-2xl shadow-2xl backdrop-blur-xl transition-all">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="flex h-2.5 w-2.5 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+            </span>
+            <span class="text-red-300 font-bold tracking-wide uppercase text-[10px]">🎙️ Диктовка врача / пациента</span>
+            <div id="voice-bars" class="flex items-center h-3 flex-shrink-0 ml-1">
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+              <span class="wave-bar"></span>
+            </div>
           </div>
-          <span id="voice-status" class="text-sky-100 italic truncate flex-1">
-            Слушаю вас...
-          </span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="if(window.medicalSpeechInstance) window.medicalSpeechInstance.stop(true)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition shadow flex items-center gap-1">
+              <span>✓</span> Готово
+            </button>
+            <button onclick="if(window.medicalSpeechInstance) window.medicalSpeechInstance.stop(false)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition" title="Отменить">
+              ✕
+            </button>
+          </div>
+        </div>
+        
+        <!-- Live Waveform Canvas (Web Audio API) -->
+        <canvas id="voice-canvas" class="waveform-canvas rounded-xl bg-slate-950/80 border border-slate-800/80 w-full h-11"></canvas>
+        
+        <div class="flex items-center justify-between text-[11px] text-slate-400 px-1">
+          <span id="voice-status" class="italic text-sky-200 truncate flex-1">Слушаю вас...</span>
+          <span class="text-[10px] text-slate-500 font-mono ml-2">Web Audio + Ru-RU</span>
         </div>
       </div>
 
@@ -273,6 +303,7 @@
         <div>
           <label class="block text-slate-300 font-bold mb-1">Провайдер нейросети</label>
           <select id="setting-provider" onchange="medicalApp.updateProviderSpecificFields()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-sky-500">
+            <option value="multillm">⚡ Multi-LLM Gateway (Пул 11 моделей: DeepSeek, Qwen, GLM, Opus, GPT)</option>
             <option value="pollinations">Pollinations AI (Бесплатно, без API-ключа, CORS)</option>
             <option value="groq">Groq (Сверхбыстрый Llama 3.3, нужен ключ Groq)</option>
             <option value="openrouter">OpenRouter (Claude 3.5, GPT-4o, DeepSeek R1)</option>
@@ -886,6 +917,53 @@
 
       <div class="p-4 border-t border-slate-800 flex justify-end">
         <button onclick="medicalApp.closeSOAPModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-LLM Model Switcher Modal -->
+  <div id="model-picker-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full max-h-[90dvh] flex flex-col shadow-2xl">
+      <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">⚡</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Пул моделей Multi-LLM</h3>
+            <p class="text-xs text-slate-400">Мгновенное переключение клинического профиля и скорости ИИ</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeModelPickerModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="px-4 sm:px-5 pt-3 border-b border-slate-800 flex gap-2 overflow-x-auto scrollbar-hide text-xs">
+        <button onclick="medicalApp.filterModelPicker('all')" id="tab-model-all" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white font-semibold transition">
+          Все модели
+        </button>
+        <button onclick="medicalApp.filterModelPicker('flash')" id="tab-model-flash" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+          🚀 Экспресс-триаж (Flash)
+        </button>
+        <button onclick="medicalApp.filterModelPicker('pro')" id="tab-model-pro" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+          🧠 Клинический разбор (Pro)
+        </button>
+        <button onclick="medicalApp.filterModelPicker('heavy')" id="tab-model-heavy" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+          💎 Высший консилиум
+        </button>
+      </div>
+
+      <!-- Model List Container -->
+      <div id="model-picker-list" class="p-4 sm:p-5 space-y-2.5 overflow-y-auto flex-1 text-xs">
+        <!-- Dynamically rendered by medicalApp.renderModelPickerList() -->
+      </div>
+
+      <div class="p-3 sm:p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Текущая: <strong id="model-picker-current-name" class="text-white">DeepSeek V4 Pro</strong></span>
+        </span>
+        <button onclick="medicalApp.closeModelPickerModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
           Закрыть
         </button>
       </div>

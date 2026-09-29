@@ -1,5 +1,74 @@
 // LLM Client for Evidence-Based Medical AI
-// Supports: Free Pollinations AI, Groq, OpenRouter, Local Ollama, Custom OpenAI-compatible endpoints, and Backend Proxy
+// Supports: Multi-LLM Model Pool, Free Pollinations AI, Groq, OpenRouter, Local Ollama, Custom OpenAI-compatible endpoints, and Backend Proxy
+
+const MULTI_LLM_MODELS = {
+  'deepseek-v4-pro': {
+    name: 'DeepSeek V4 Pro',
+    badge: 'Консилиум',
+    desc: 'Тяжелый клинический разбор и дифференциальный диагноз',
+    tier: 'pro'
+  },
+  'deepseek-v4.1-flash': {
+    name: 'DeepSeek V4.1 Flash',
+    badge: 'Сверхбыстрый',
+    desc: 'Моментальный триаж и экспресс-оценка в приёмном покое',
+    tier: 'flash'
+  },
+  'qwen3.8-flash': {
+    name: 'Qwen 3.8 Flash',
+    badge: 'Протоколы',
+    desc: 'Протоколы Минздрава/ВОЗ, дозировки и фармакотерапия',
+    tier: 'flash'
+  },
+  'qwen3.8-max': {
+    name: 'Qwen 3.8 Max',
+    badge: 'Глубокий EBM',
+    desc: 'Анализ сложных коморбидных историй болезни',
+    tier: 'pro'
+  },
+  'glm-5.3': {
+    name: 'GLM 5.3',
+    badge: 'Эксперт',
+    desc: 'Академический клинический консилиум',
+    tier: 'pro'
+  },
+  'glm-5.3-flash': {
+    name: 'GLM 5.3 Flash',
+    badge: 'Эконом',
+    desc: 'Быстрые подсказки и нормативные нормы',
+    tier: 'flash'
+  },
+  'claude-opus-5-5': {
+    name: 'Claude Opus 5.5',
+    badge: 'Opus Consensus',
+    desc: 'Мультиагентный врачебный консилиум высшего уровня',
+    tier: 'heavy'
+  },
+  'claude-sonnet-5': {
+    name: 'Claude Sonnet 5',
+    badge: 'Sonnet Clinician',
+    desc: 'Строгое следование протоколам ESC/ERC',
+    tier: 'pro'
+  },
+  'gpt-6-astra': {
+    name: 'GPT-6 Astra',
+    badge: 'Astra Medical',
+    desc: 'Комплексный мультимодальный анализ',
+    tier: 'pro'
+  },
+  'gpt-5.6-terra': {
+    name: 'GPT-5.6 Terra',
+    badge: 'Terra',
+    desc: 'Стабильные терапевтические рекомендации',
+    tier: 'flash'
+  },
+  'minimax-m3': {
+    name: 'MiniMax M3',
+    badge: 'MiniMax',
+    desc: 'Динамичный диалог с пациентом',
+    tier: 'flash'
+  }
+};
 
 class LLMClient {
   constructor() {
@@ -9,9 +78,112 @@ class LLMClient {
     this.checkBackendHealth();
   }
 
+  static get MULTI_LLM_MODELS() {
+    return MULTI_LLM_MODELS;
+  }
+
+  getMultiLLMModels() {
+    return MULTI_LLM_MODELS;
+  }
+
+  getModelsByTier(tier) {
+    if (!tier) return MULTI_LLM_MODELS;
+    const filtered = {};
+    for (const [key, val] of Object.entries(MULTI_LLM_MODELS)) {
+      if (val.tier === tier) {
+        filtered[key] = val;
+      }
+    }
+    return filtered;
+  }
+
+  setModel(modelId, provider = null) {
+    if (!modelId || typeof modelId !== 'string') return null;
+
+    const trimmedModel = modelId.trim();
+    const update = { model: trimmedModel };
+
+    if (provider) {
+      update.provider = provider;
+    } else if (MULTI_LLM_MODELS[trimmedModel]) {
+      // Switching to a model from the Multi-LLM pool automatically activates the 'multillm' provider
+      update.provider = 'multillm';
+    }
+
+    this.saveConfig(update);
+
+    // Update UI badge if medicalApp is active
+    if (typeof window !== 'undefined') {
+      try {
+        if (window.medicalApp && typeof window.medicalApp.updateProviderBadge === 'function') {
+          window.medicalApp.updateProviderBadge();
+        }
+      } catch (e) {
+        console.warn("Could not update provider badge:", e);
+      }
+
+      try {
+        if (typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(new CustomEvent('llm-model-changed', {
+            detail: {
+              model: this.config.model,
+              provider: this.config.provider,
+              info: this.getActiveModelInfo()
+            }
+          }));
+        }
+      } catch (e) {
+        console.warn("Could not dispatch llm-model-changed event:", e);
+      }
+    }
+
+    return this.getActiveModelInfo();
+  }
+
+  switchModel(modelId, provider = null) {
+    return this.setModel(modelId, provider);
+  }
+
+  getActiveModelInfo() {
+    const modelId = this.config.model || 'openai';
+    const provider = this.config.provider || 'pollinations';
+    const catalogItem = MULTI_LLM_MODELS[modelId];
+
+    if (catalogItem) {
+      return {
+        id: modelId,
+        provider: provider,
+        name: catalogItem.name,
+        badge: catalogItem.badge,
+        desc: catalogItem.desc,
+        tier: catalogItem.tier,
+        isMultiLLM: true
+      };
+    }
+
+    const fallbackNames = {
+      'openai': 'Pollinations OpenAI',
+      'llama-3.3-70b-versatile': 'Groq Llama 3.3 70B',
+      'deepseek/deepseek-r1': 'OpenRouter DeepSeek R1',
+      'llama3.2': 'Ollama Llama 3.2',
+      'deepseek-chat': 'FastAPI DeepSeek',
+      'gpt-4o-mini': 'Custom OpenAI'
+    };
+
+    return {
+      id: modelId,
+      provider: provider,
+      name: fallbackNames[modelId] || modelId,
+      badge: provider.toUpperCase(),
+      desc: `Провайдер: ${provider}`,
+      tier: 'standard',
+      isMultiLLM: false
+    };
+  }
+
   getDefaultConfig() {
     return {
-      provider: 'pollinations', // 'pollinations' | 'groq' | 'openrouter' | 'ollama' | 'backend' | 'custom'
+      provider: 'pollinations', // 'pollinations' | 'groq' | 'openrouter' | 'ollama' | 'backend' | 'custom' | 'multillm'
       apiKey: '',
       baseUrl: 'https://text.pollinations.ai/openai/chat/completions',
       model: 'openai',
@@ -21,9 +193,11 @@ class LLMClient {
 
   loadConfig() {
     try {
-      const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        return { ...this.getDefaultConfig(), ...JSON.parse(saved) };
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(this.storageKey);
+        if (saved) {
+          return { ...this.getDefaultConfig(), ...JSON.parse(saved) };
+        }
       }
     } catch (e) {
       console.warn("Could not load LLM config from localStorage", e);
@@ -34,7 +208,9 @@ class LLMClient {
   saveConfig(newConfig) {
     this.config = { ...this.config, ...newConfig };
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.config));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.config));
+      }
     } catch (e) {
       console.error("Could not save LLM config", e);
     }
@@ -42,6 +218,7 @@ class LLMClient {
 
   async checkBackendHealth() {
     try {
+      if (typeof fetch === 'undefined') return false;
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 1200);
       const res = await fetch('./api/health', { signal: ctrl.signal });
@@ -62,6 +239,33 @@ class LLMClient {
     const { provider, apiKey, baseUrl, model } = this.config;
 
     switch (provider) {
+      case 'multillm': {
+        const rawBase = (baseUrl && baseUrl.trim()) ? baseUrl.trim() : '';
+        const isDefaultPollinations = rawBase === 'https://text.pollinations.ai/openai/chat/completions';
+
+        let url = (!rawBase || isDefaultPollinations)
+          ? 'https://api.openai.com/v1/chat/completions'
+          : rawBase;
+
+        if (!url.endsWith('/chat/completions') && !url.includes('/chat/')) {
+          url = `${url.replace(/\/+$/, '')}/chat/completions`;
+        }
+
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+
+        if (apiKey && apiKey.trim()) {
+          headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+        }
+
+        return {
+          url,
+          model: model || 'deepseek-v4.1-flash',
+          headers
+        };
+      }
+
       case 'groq':
         return {
           url: 'https://api.groq.com/openai/v1/chat/completions',
@@ -79,7 +283,7 @@ class LLMClient {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey.trim()}`,
-            'HTTP-Referer': window.location.origin || 'http://localhost',
+            'HTTP-Referer': (typeof window !== 'undefined' && window.location && window.location.origin) || 'http://localhost',
             'X-Title': 'Medical AI Assistant'
           }
         };
@@ -234,7 +438,16 @@ class LLMClient {
 
     const endpoint = this.getEndpointDetails();
 
-    // Check if key required
+    // Check if key/endpoint required
+    if (this.config.provider === 'multillm') {
+      const hasKey = Boolean(this.config.apiKey && this.config.apiKey.trim());
+      const hasCustomBase = Boolean(this.config.baseUrl && this.config.baseUrl.trim() && this.config.baseUrl !== 'https://text.pollinations.ai/openai/chat/completions');
+      if (!hasKey && !hasCustomBase && !this.backendAvailable) {
+        onError(`Для работы пула Multi-LLM (${endpoint.model}) укажите ваш API-ключ или адрес шлюза в Настройках ⚙️. Или переключитесь на бесплатный режим Pollinations EBM.`);
+        return;
+      }
+    }
+
     if ((this.config.provider === 'groq' || this.config.provider === 'openrouter') && !this.config.apiKey) {
       onError(`Для работы через ${this.config.provider.toUpperCase()} укажите API-ключ в настройках ⚙️. Или переключитесь на бесплатный Pollinations AI.`);
       return;
@@ -369,4 +582,12 @@ class LLMClient {
   }
 }
 
-window.llmClient = new LLMClient();
+if (typeof window !== 'undefined') {
+  window.LLMClient = LLMClient;
+  window.MULTI_LLM_MODELS = MULTI_LLM_MODELS;
+  window.llmClient = new LLMClient();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { LLMClient, MULTI_LLM_MODELS };
+}
