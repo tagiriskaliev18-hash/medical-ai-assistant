@@ -55,9 +55,9 @@ class MedicalApp {
         const input = document.getElementById('user-input');
         if (input) {
           input.value = finalTranscript;
+          input.dispatchEvent(new Event('input'));
         }
-        // Auto-send when voice stops
-        setTimeout(() => this.sendMessage(), 500);
+        // Убрали автоотправку по просьбе пользователя
       });
     }
   }

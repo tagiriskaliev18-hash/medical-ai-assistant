@@ -59,14 +59,18 @@ class LLMClient {
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let fullText = "";
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true });
         
-        const lines = chunk.split('\n');
-        for (const line of lines) {
+        let newlineIndex;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim();
+          buffer = buffer.slice(newlineIndex + 1);
+          
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6);
             if (dataStr === '[DONE]') continue;
@@ -78,7 +82,7 @@ class LLMClient {
                 onChunk(textChunk);
               }
             } catch (e) {
-              console.warn("Parse error on chunk: ", e);
+              console.warn("Parse error on complete line: ", e);
             }
           }
         }
