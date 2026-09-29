@@ -105,6 +105,9 @@ class MedicalSpeech {
     };
 
     this.recognition.onresult = (event) => {
+      if (!this._isListening || this.explicitStop) {
+        return;
+      }
       this.restartAttempts = 0;
       this.consecutiveErrors = 0;
 
@@ -842,6 +845,37 @@ class MedicalSpeech {
     this.restartAttempts = 0;
   }
 
+  /**
+   * Immediately aborts and discards all speech recognition sessions without committing.
+   * Engineered for instant execution when user presses Send.
+   */
+  abort() {
+    this.explicitStop = true;
+    this._isListening = false;
+
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+
+    this.accumulatedFinalText = '';
+    this.latestInterim = '';
+    this.restartAttempts = 0;
+
+    if (this.recognition) {
+      try {
+        this.recognition.abort();
+      } catch (_) {}
+    }
+
+    this._stopAudioCapture();
+    this.updateUI(false);
+
+    if (this.onStateChange) {
+      this.onStateChange(false);
+    }
+  }
+
   toggle() {
     if (this._isListening) {
       this.stop();
@@ -857,4 +891,5 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = MedicalSpeech;
+  module.exports.MedicalSpeech = MedicalSpeech;
 }

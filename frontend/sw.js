@@ -1,5 +1,5 @@
 // Service Worker for Medical AI Assistant (Apple Minimalist Consilium)
-const CACHE_NAME = 'doctor-apple-v5';
+const CACHE_NAME = 'doctor-apple-v6';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -38,7 +38,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Кэширование клинических ресурсов (v5)...');
+      console.log('[SW] Кэширование клинических ресурсов (v6)...');
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
         console.warn('[SW] Ошибка предкэширования:', err);
       });

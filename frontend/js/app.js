@@ -5,9 +5,11 @@ class MedicalApp {
     this.messages = [];
     this.detectedRedFlags = [];
     this.isStreaming = false;
+    this.isSubmitting = false;
     this.voiceAssistant = null;
     this.autoTTS = false;
     this.isOffline = !navigator.onLine;
+    this.updateInputButtons = null;
     
     // Initialize client-side clinical database
     if (window.clinicalEngine) {
@@ -41,6 +43,7 @@ class MedicalApp {
         if (micBtn) micBtn.classList.remove('hidden');
       }
     };
+    this.updateInputButtons = updateInputButtons;
 
     if (input) {
       input.addEventListener('keydown', (e) => {
@@ -81,12 +84,14 @@ class MedicalApp {
   setupVoice() {
     if (window.MedicalSpeech) {
       this.voiceAssistant = new window.MedicalSpeech((transcript) => {
+        if (this.isStreaming || this.isSubmitting) return;
         const input = document.getElementById('user-input');
         if (input) {
           input.value = transcript;
           input.dispatchEvent(new Event('input'));
         }
       }, (finalTranscript) => {
+        if (this.isStreaming || this.isSubmitting) return;
         const input = document.getElementById('user-input');
         if (input) {
           input.value = finalTranscript;
@@ -186,20 +191,41 @@ class MedicalApp {
   }
 
   async sendMessage(overrideText = null) {
-    if (this.isStreaming) return;
-    
-    const inputEl = document.getElementById('user-input');
-    const text = overrideText || (inputEl ? inputEl.value.trim() : '');
-    if (!text) return;
+    if (this.isStreaming || this.isSubmitting) return;
+    this.isSubmitting = true;
 
-    if (!overrideText && inputEl) {
+    // 1. Immediately abort & stop speech recognition to eliminate duplicates and freezes
+    if (this.voiceAssistant) {
+      try {
+        if (typeof this.voiceAssistant.abort === 'function') {
+          this.voiceAssistant.abort();
+        } else if (typeof this.voiceAssistant.stop === 'function') {
+          this.voiceAssistant.stop(false);
+        }
+      } catch (err) {
+        console.warn('Voice abort note:', err);
+      }
+    }
+
+    const inputEl = document.getElementById('user-input');
+    const text = overrideText ? overrideText.trim() : (inputEl ? inputEl.value.trim() : '');
+    if (!text) {
+      this.isSubmitting = false;
+      return;
+    }
+
+    if (inputEl) {
       inputEl.value = '';
       inputEl.style.height = 'auto';
+    }
+    if (this.updateInputButtons) {
+      this.updateInputButtons();
     }
 
     this.appendMessage('user', text);
     this.updateSendButtonState(true);
     this.isStreaming = true;
+    this.isSubmitting = false;
 
     const doctorMsgEl = this.appendMessage('assistant', '', true);
     
@@ -276,7 +302,7 @@ class MedicalApp {
         }
 
         const basePrefix = redFlagAlert ? '' : '';
-        this.finalizeMessage(doctorMsgEl, text, offlineResponse);
+        this.finalizeMessage(doctorMsgEl, text, offlineResponse, offlineResponse);
       }, 300);
       return;
     }
@@ -292,14 +318,18 @@ class MedicalApp {
           isEmergency,
           // onChunk
           (chunk) => {
-            fullResponseText += chunk;
+            fullResponseText = chunk;
             const banner = redFlagAlert ? this.getEmergencyHeaderHtml(redFlagAlert) : '';
             this.renderDoctorContent(doctorMsgEl, fullResponseText, false, banner);
           },
           // onError
           (errMsg) => {
             this.isStreaming = false;
+            this.isSubmitting = false;
             this.updateSendButtonState(false);
+            if (this.updateInputButtons) {
+              this.updateInputButtons();
+            }
             doctorMsgEl.classList.remove('cursor-blink');
             
             // If LLM failed but we have clinical context, show EBM fallback
@@ -336,7 +366,11 @@ class MedicalApp {
     } catch (e) {
       console.error("Streaming error:", e);
       this.isStreaming = false;
+      this.isSubmitting = false;
       this.updateSendButtonState(false);
+      if (this.updateInputButtons) {
+        this.updateInputButtons();
+      }
       doctorMsgEl.classList.remove('cursor-blink');
       doctorMsgEl.innerHTML = `
         <div class="p-4 bg-red-900/40 border border-red-500/60 rounded-xl text-red-200 text-sm">
@@ -374,12 +408,16 @@ class MedicalApp {
 
   finalizeMessage(doctorMsgEl, userText, displayHtml, rawTextForTTS = '') {
     this.isStreaming = false;
+    this.isSubmitting = false;
     this.updateSendButtonState(false);
+    if (this.updateInputButtons) {
+      this.updateInputButtons();
+    }
     doctorMsgEl.classList.remove('cursor-blink');
     this.renderDoctorContent(doctorMsgEl, displayHtml, true);
     
     this.messages.push({ role: 'user', content: userText });
-    this.messages.push({ role: 'assistant', content: displayHtml });
+    this.messages.push({ role: 'assistant', content: rawTextForTTS || displayHtml });
 
     if (this.autoTTS && window.medicalTTS) {
       window.medicalTTS.speak(rawTextForTTS || displayHtml);
