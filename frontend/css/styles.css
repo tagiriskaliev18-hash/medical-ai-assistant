@@ -1,241 +1,177 @@
 /* ==========================================================================
-   Clinical Medical Workstation UI & Voice Dynamics
-   Engineered for Hospital Emergency Admitting & Outpatient Triage
+   Apple-Grade Minimalist Clinical Design System
+   Designed for Mobile (iOS / Safari / PWA) & Emergency Admitting Workflow
    ========================================================================== */
 
 :root {
-  --primary: #0284c7;
-  --primary-glow: rgba(2, 132, 199, 0.35);
-  --primary-hover: #0369a1;
-  --primary-light: #e0f2fe;
+  --ios-bg: #000000;
+  --ios-surface: #1c1c1e;
+  --ios-surface-elevated: #2c2c2e;
+  --ios-surface-hover: #3a3a3c;
+  --ios-border: rgba(255, 255, 255, 0.1);
+  --ios-border-subtle: rgba(255, 255, 255, 0.06);
   
-  --danger: #ef4444;
-  --danger-glow: rgba(239, 68, 68, 0.4);
-  --danger-light: #fee2e2;
+  --ios-blue: #0a84ff;
+  --ios-blue-hover: #0071e3;
+  --ios-blue-tint: rgba(10, 132, 255, 0.15);
   
-  --success: #10b981;
-  --success-glow: rgba(16, 185, 129, 0.3);
+  --ios-red: #ff453a;
+  --ios-green: #30d158;
+  --ios-orange: #ff9f0a;
+  --ios-purple: #bf5af2;
   
-  --warning: #f59e0b;
-  --warning-glow: rgba(245, 158, 11, 0.3);
-  
-  --bg-main: #060913;
-  --bg-surface: #0c1322;
-  --bg-card: #111a2e;
-  --bg-card-hover: #16223d;
-  --bg-input: #090e1a;
-  
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(56, 189, 248, 0.5);
-  
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --ios-text: #ffffff;
+  --ios-text-secondary: #8e8e93;
+  --ios-text-tertiary: #636366;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  background-color: var(--ios-bg);
+  color: var(--ios-text);
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow: hidden;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism Surface */
-.glass-panel {
-  background: rgba(12, 19, 34, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
+/* Apple Frosted Glass */
+.apple-blur {
+  background: rgba(28, 28, 30, 0.82);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border-bottom: 0.5px solid var(--ios-border);
 }
 
-.glass-card {
-  background: rgba(17, 26, 46, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.apple-dock {
+  background: rgba(28, 28, 30, 0.85);
+  backdrop-filter: blur(30px) saturate(190%);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  border-top: 0.5px solid var(--ios-border);
 }
 
-.glass-card:hover {
-  border-color: rgba(56, 189, 248, 0.3);
-  background: rgba(22, 34, 61, 0.85);
+.apple-card {
+  background: var(--ios-surface);
+  border: 0.5px solid var(--ios-border);
+  border-radius: 20px;
 }
 
-/* Glowing Model Switcher Chip */
-.model-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  background: rgba(2, 132, 199, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #7dd3fc;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.model-pill:hover {
-  background: rgba(2, 132, 199, 0.25);
-  border-color: #38bdf8;
-  box-shadow: 0 0 12px var(--primary-glow);
-  transform: translateY(-1px);
-}
-
-.model-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8;
-}
-
-/* Live Voice Recording Dock & Canvas Visualizer */
-#voice-overlay-dock {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.recording-pulse-ring {
-  position: relative;
-}
-
-.recording-pulse-ring::before {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: inherit;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%);
-  animation: audio-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  z-index: -1;
-}
-
-@keyframes audio-pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 0.3; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-/* Waveform Canvas */
-.waveform-canvas {
+/* Siri-style Voice Recording Waveform */
+.siri-wave-canvas {
   width: 100%;
-  height: 48px;
+  height: 38px;
   display: block;
 }
 
-/* Audio wave bars fallback */
-.wave-bar {
-  display: inline-block;
-  width: 3.5px;
-  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
-  border-radius: 3px;
-  margin: 0 2px;
-  animation: wave 1s ease-in-out infinite;
+.recording-ring {
+  animation: apple-record-pulse 1.6s ease-in-out infinite;
 }
 
-@keyframes wave {
-  0%, 100% { height: 6px; opacity: 0.4; }
-  50% { height: 26px; opacity: 1; }
+@keyframes apple-record-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(255, 69, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); }
 }
 
-.wave-bar:nth-child(2) { animation-delay: 0.12s; }
-.wave-bar:nth-child(3) { animation-delay: 0.24s; }
-.wave-bar:nth-child(4) { animation-delay: 0.36s; }
-.wave-bar:nth-child(5) { animation-delay: 0.48s; }
-
-/* Markdown & Clinical Section Styles */
-.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
-  font-weight: 700;
-  line-height: 1.3;
+/* Chat Bubbles - Apple iMessage aesthetic */
+.bubble-user {
+  background: var(--ios-blue);
+  color: #ffffff;
+  border-radius: 20px 20px 4px 20px;
+  padding: 11px 16px;
+  font-size: 15px;
+  line-height: 1.45;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.markdown-body h3 {
-  font-size: 1.1rem;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #38bdf8;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-  padding-bottom: 0.35rem;
-}
-
-.markdown-body ul, .markdown-body ol {
-  padding-left: 1.3rem;
-  margin-top: 0.4rem;
-  margin-bottom: 0.75rem;
-}
-
-.markdown-body li {
-  margin-bottom: 0.35rem;
+.bubble-ai {
+  background: var(--ios-surface);
+  color: var(--ios-text);
+  border: 0.5px solid var(--ios-border);
+  border-radius: 20px 20px 20px 4px;
+  padding: 14px 18px;
+  font-size: 14.5px;
   line-height: 1.55;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.markdown-body strong {
-  color: #f1f5f9;
-  font-weight: 600;
-}
-
-/* Distinct Patient vs Doctor Cards in Message */
+/* Clinical Callout Cards inside Chat */
 .section-patient {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.06) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(10, 132, 255, 0.08);
+  border: 0.5px solid rgba(10, 132, 255, 0.25);
   border-radius: 14px;
-  padding: 14px 16px;
-  margin: 12px 0;
+  padding: 12px 14px;
+  margin: 10px 0;
 }
 
 .section-doctor {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-left: 4px solid #38bdf8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-left: 3px solid var(--ios-blue);
   border-radius: 0 14px 14px 0;
-  padding: 14px 16px;
-  margin: 12px 0;
+  padding: 12px 14px;
+  margin: 10px 0;
 }
 
-/* Quick Action Chips */
-.quick-chip {
-  transition: all 0.15s ease;
-  user-select: none;
-}
-
-.quick-chip:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.quick-chip:active {
-  transform: translateY(0);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+/* Apple Action Pill Buttons */
+.apple-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: #e5e5ea;
   border-radius: 9999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+.apple-chip:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.16);
 }
 
-/* Cursor typing effect */
+/* Markdown within AI responses */
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+  font-weight: 600;
+  color: #ffffff;
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.05rem;
+  color: var(--ios-blue);
+}
+
+.markdown-body ul, .markdown-body ol {
+  padding-left: 1.25rem;
+  margin: 0.3rem 0;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Typing cursor animation */
 .cursor-blink::after {
   content: '▋';
-  color: #38bdf8;
-  animation: blink 0.8s infinite;
+  color: var(--ios-blue);
+  animation: blink 0.9s infinite;
   margin-left: 2px;
 }
 
@@ -244,11 +180,39 @@ body {
   50% { opacity: 0; }
 }
 
-/* Touch safe bottom for mobile devices */
-.pb-safe {
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+/* Minimal Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+/* Mobile Safe Areas */
 .safe-top {
-  padding-top: max(0px, env(safe-area-inset-top));
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+/* Siri Voice Wave Bars */
+.wave-bar {
+  display: inline-block;
+  width: 3px;
+  height: 4px;
+  min-height: 4px;
+  background: var(--ios-red, #FF453A);
+  border-radius: 2px;
+  margin: 0 1.5px;
+  transition: height 0.08s ease, opacity 0.08s ease;
+  vertical-align: middle;
 }
