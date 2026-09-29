@@ -599,20 +599,35 @@ class LLMClient {
       stream: true
     };
 
-    // 8-second abort controller to prevent endless freezing on initial connect
-    const abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timeoutId = abortCtrl ? setTimeout(() => abortCtrl.abort(), 8000) : null;
+    // Abort controller to prevent endless freezing on initial connect (mobile networks need headroom)
+    let abortCtrl = null;
+    let timeoutId = null;
     let streamWatchdog = null;
+    let fullText = "";
 
     try {
-      const response = await fetch(endpoint.url, {
-        method: 'POST',
-        headers: endpoint.headers,
-        body: JSON.stringify(payload),
-        signal: abortCtrl ? abortCtrl.signal : undefined
-      });
+      // Anonymous Pollinations allows ~1 request per ~20s per IP (mobile carriers share IPs),
+      // so rate-limit responses (402/429) are retried with a visible wait instead of falling back at once.
+      const RATE_LIMIT_RETRY_DELAYS = [5000, 7000, 9000];
+      let response;
+      for (let attempt = 0; ; attempt++) {
+        abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        timeoutId = abortCtrl ? setTimeout(() => abortCtrl.abort(), 25000) : null;
+        response = await fetch(endpoint.url, {
+          method: 'POST',
+          headers: endpoint.headers,
+          body: JSON.stringify(payload),
+          signal: abortCtrl ? abortCtrl.signal : undefined
+        });
+        if (timeoutId) clearTimeout(timeoutId);
 
-      if (timeoutId) clearTimeout(timeoutId);
+        const isRateLimited = response.status === 402 || response.status === 429;
+        if (!isRateLimited || attempt >= RATE_LIMIT_RETRY_DELAYS.length) break;
+
+        const delay = RATE_LIMIT_RETRY_DELAYS[attempt];
+        onChunk(`⏳ *Нейросеть сейчас перегружена, повторяю запрос через ${Math.round(delay / 1000)} сек (попытка ${attempt + 2} из ${RATE_LIMIT_RETRY_DELAYS.length + 1})...*`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
 
       if (!response.ok) {
         throw new Error(`Статус ${response.status} (${response.statusText})`);
@@ -637,17 +652,16 @@ class LLMClient {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-      let fullText = "";
       let buffer = "";
       let hasReasoningNotice = false;
       let hasReceivedRealContent = false;
 
-      // Watchdog timer: abort if stream hangs between chunks for > 8 seconds
+      // Watchdog timer: abort if stream hangs between chunks for > 20 seconds
       const resetWatchdog = () => {
         if (streamWatchdog) clearTimeout(streamWatchdog);
         streamWatchdog = setTimeout(() => {
           if (abortCtrl) abortCtrl.abort();
-        }, 8000);
+        }, 20000);
       };
       resetWatchdog();
 
@@ -717,8 +731,17 @@ class LLMClient {
       if (streamWatchdog) clearTimeout(streamWatchdog);
       console.warn("LLM API fallback activated:", e.message);
 
-      // Instant high-quality local Clinical Consilium fallback — zero freeze!
-      const fallbackReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
+      // Stream broke mid-answer: keep the real model text instead of replacing it with the template
+      if (fullText && fullText.trim().length >= 200) {
+        const partial = fullText + '\n\n> [!IMPORTANT]\n> Связь с нейросетью прервалась — ответ может быть неполным. Повторите вопрос при необходимости.';
+        onChunk(partial);
+        onComplete(partial);
+        return;
+      }
+
+      // Instant local Clinical Consilium fallback — zero freeze, but clearly labelled as a template
+      const fallbackReply = '> [!IMPORTANT]\n> Нейросеть сейчас недоступна — показан **шаблонный ответ из локальной базы**, а не персональный разбор. Попробуйте отправить вопрос ещё раз через 20–30 секунд.\n\n'
+        + this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
       onChunk(fallbackReply);
       onComplete(fallbackReply);
     }

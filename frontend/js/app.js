@@ -313,7 +313,8 @@ class MedicalApp {
     try {
       if (window.llmClient) {
         await window.llmClient.streamChat(
-          this.messages.slice(-6),
+          // Current question is only pushed to history in finalizeMessage, so append it explicitly
+          [...this.messages.slice(-6), { role: 'user', content: text }],
           engineContext,
           isEmergency,
           // onChunk
