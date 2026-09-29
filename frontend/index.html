@@ -102,26 +102,26 @@
             👨‍⚕️
           </div>
           <div class="flex-1">
-            <h2 class="text-xl font-bold text-white mb-2">Здравствуйте! Я ваш медицинский ИИ-ассистент</h2>
+            <h2 class="text-xl font-bold text-white mb-2">Здравствуйте! Я ваш медицинский помощник</h2>
             <p class="text-sm text-slate-300 leading-relaxed mb-4">
-              В базу знаний заложены клинические протоколы Всемирной организации здравоохранения (ВОЗ), Европейского совета по реанимации (ERC 2021), AHA и мета-анализы Cochrane Library.
+              Расскажите, что вас беспокоит — простыми словами, как рассказали бы врачу. Я задам уточняющие вопросы и подскажу, к какому специалисту обратиться.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
-                <span class="text-sky-400 font-bold block mb-1">🎙️ Голосовой ввод</span>
-                <span class="text-slate-400">Нажмите микрофон и опишите симптомы вслух.</span>
+                <span class="text-sky-400 font-bold block mb-1">🗣️ Опишите жалобы</span>
+                <span class="text-slate-400">Напишите или нажмите 🎙️ и расскажите голосом что болит.</span>
               </div>
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
-                <span class="text-emerald-400 font-bold block mb-1">🖼️ Наглядные схемы</span>
-                <span class="text-slate-400">Пошаговые векторные иллюстрации манипуляций и метроном СЛР.</span>
+                <span class="text-emerald-400 font-bold block mb-1">👨‍⚕️ Помощь врачу</span>
+                <span class="text-slate-400">Подскажу что измерить, какие анализы сдать и к кому направить.</span>
               </div>
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
-                <span class="text-red-400 font-bold block mb-1">🚨 Мгновенный триаж</span>
-                <span class="text-slate-400">Автоматический скрининг Red Flags и связь с 103/112.</span>
+                <span class="text-red-400 font-bold block mb-1">🚨 Экстренная помощь</span>
+                <span class="text-slate-400">При угрозе жизни — моментальный протокол и связь со скорой 103/112.</span>
               </div>
             </div>
             <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center md:text-left">
-              ⚖️ <em>Информационно-клинический помощник для экстренной доврачебной самопомощи. Не заменяет очного осмотра врача.</em>
+              ⚖️ <em>Помощник не заменяет очного осмотра врача. При угрозе жизни звоните 103 или 112.</em>
             </div>
           </div>
         </div>
@@ -136,26 +136,29 @@
       
       <!-- Quick Requests -->
       <div class="flex items-center gap-2 overflow-x-auto pb-2.5 mb-1 scrollbar-hide text-[11px] whitespace-nowrap">
+        <button onclick="medicalApp.sendMessage('Болит голова, уже второй день')" class="px-3 py-1.5 rounded-lg bg-sky-900/50 hover:bg-sky-800 text-sky-200 border border-sky-700/50 transition">
+          🤕 Болит голова
+        </button>
+        <button onclick="medicalApp.sendMessage('Боль в груди, тяжело дышать')" class="px-3 py-1.5 rounded-lg bg-purple-900/50 hover:bg-purple-800 text-purple-200 border border-purple-700/50 transition">
+          💔 Боль в груди
+        </button>
+        <button onclick="medicalApp.sendMessage('Живот болит, тошнит')" class="px-3 py-1.5 rounded-lg bg-amber-900/50 hover:bg-amber-800 text-amber-200 border border-amber-700/50 transition">
+          🤢 Болит живот
+        </button>
+        <button onclick="medicalApp.sendMessage('У ребёнка температура 38.5, кашляет')" class="px-3 py-1.5 rounded-lg bg-orange-900/50 hover:bg-orange-800 text-orange-200 border border-orange-700/50 transition">
+          🤒 Ребёнок температурит
+        </button>
+        <button onclick="medicalApp.sendMessage('Кружится голова, слабость, потемнело в глазах')" class="px-3 py-1.5 rounded-lg bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/50 transition">
+          😵 Головокружение
+        </button>
+        <button onclick="medicalApp.sendMessage('Болит спина в пояснице, не могу разогнуться')" class="px-3 py-1.5 rounded-lg bg-teal-900/50 hover:bg-teal-800 text-teal-200 border border-teal-700/50 transition">
+          🦴 Болит спина
+        </button>
+        <button onclick="medicalApp.sendMessage('Давление высокое, голова раскалывается')" class="px-3 py-1.5 rounded-lg bg-rose-900/50 hover:bg-rose-800 text-rose-200 border border-rose-700/50 transition">
+          📈 Высокое давление
+        </button>
         <button onclick="medicalApp.sendMessage('Человек без сознания, не дышит. Что делать?')" class="px-3 py-1.5 rounded-lg bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-700/50 transition">
           🚨 Нет дыхания (СЛР)
-        </button>
-        <button onclick="medicalApp.sendMessage('У человека асимметрия лица и невнятная речь')" class="px-3 py-1.5 rounded-lg bg-orange-900/50 hover:bg-orange-800 text-orange-200 border border-orange-700/50 transition">
-          🧠 Инсульт (FAST)
-        </button>
-        <button onclick="medicalApp.sendMessage('Сильное артериальное кровотечение из руки')" class="px-3 py-1.5 rounded-lg bg-rose-900/50 hover:bg-rose-800 text-rose-200 border border-rose-700/50 transition">
-          🩸 Кровотечение
-        </button>
-        <button onclick="medicalApp.sendMessage('Человек подавился и не может кашлять')" class="px-3 py-1.5 rounded-lg bg-blue-900/50 hover:bg-blue-800 text-blue-200 border border-blue-700/50 transition">
-          🫁 Прием Геймлиха
-        </button>
-        <button onclick="medicalApp.sendMessage('Сильная давящая боль за грудиной, отдает в левую руку')" class="px-3 py-1.5 rounded-lg bg-purple-900/50 hover:bg-purple-800 text-purple-200 border border-purple-700/50 transition">
-          💔 Инфаркт
-        </button>
-        <button onclick="medicalApp.sendMessage('Ребенок пролил на себя горячий чай')" class="px-3 py-1.5 rounded-lg bg-amber-900/50 hover:bg-amber-800 text-amber-200 border border-amber-700/50 transition">
-          🔥 Ожог
-        </button>
-        <button onclick="medicalApp.sendMessage('Как помочь при судорожном приступе (эпилепсия)?')" class="px-3 py-1.5 rounded-lg bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/50 transition">
-          ⚡ Судороги
         </button>
       </div>
 
