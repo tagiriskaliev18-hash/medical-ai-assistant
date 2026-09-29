@@ -1,21 +1,17 @@
-// Real-time Voice Recognition Module using Web Speech API
-
-class VoiceAssistant {
-  constructor(onResult, onStatusChange) {
+class MedicalSpeech {
+  constructor(onInterim, onFinal) {
     this.recognition = null;
     this.isListening = false;
-    this.onResult = onResult;
-    this.onStatusChange = onStatusChange;
+    this.onInterim = onInterim;
+    this.onFinal = onFinal;
+    this.fullTranscript = '';
     this.init();
   }
 
   init() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      console.warn("Web Speech API not supported in this browser.");
-      if (this.onStatusChange) {
-        this.onStatusChange({ supported: false, listening: false, text: "Голосовой ввод не поддерживается браузером" });
-      }
+      console.warn("Web Speech API not supported.");
       return;
     }
 
@@ -24,45 +20,36 @@ class VoiceAssistant {
     this.recognition.interimResults = true;
     this.recognition.continuous = true;
 
+    this.setupDOM();
+
     this.recognition.onstart = () => {
       this.isListening = true;
-      clinicalAudio.playChimeStart();
-      if (this.onStatusChange) {
-        this.onStatusChange({ supported: true, listening: true, text: "Слушаю вас... Говорите симптомы" });
-      }
+      this.updateUI(true);
+      if (window.clinicalAudio) window.clinicalAudio.playChimeStart();
+      this.fullTranscript = '';
     };
 
     this.recognition.onresult = (event) => {
       let interimTranscript = '';
-      let finalTranscript = '';
-
+      
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          this.fullTranscript += event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
 
-      if (this.onResult) {
-        this.onResult({
-          final: finalTranscript,
-          interim: interimTranscript,
-          combined: finalTranscript || interimTranscript
-        });
-      }
+      const combined = this.fullTranscript + interimTranscript;
+      if (this.onInterim) this.onInterim(combined);
+      
+      const status = document.getElementById('voice-status');
+      if (status) status.innerText = interimTranscript || "Слушаю вас...";
     };
 
     this.recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
+      console.error("Speech error:", event.error);
       this.stop();
-      if (this.onStatusChange) {
-        this.onStatusChange({ 
-          supported: true, 
-          listening: false, 
-          text: event.error === 'not-allowed' ? "Доступ к микрофону заблокирован" : "Ошибка распознавания речи" 
-        });
-      }
     };
 
     this.recognition.onend = () => {
@@ -72,24 +59,49 @@ class VoiceAssistant {
     };
   }
 
-  toggle() {
-    if (this.isListening) {
-      this.stop();
+  setupDOM() {
+    const micBtn = document.getElementById('mic-btn');
+    if (micBtn) {
+      micBtn.addEventListener('click', () => {
+        if (this.isListening) this.stop();
+        else this.start();
+      });
+    }
+  }
+
+  updateUI(listening) {
+    const micBtn = document.getElementById('mic-btn');
+    const banner = document.getElementById('voice-banner');
+    const bars = document.getElementById('voice-bars');
+    const status = document.getElementById('voice-status');
+    
+    if (listening) {
+      if (micBtn) {
+        micBtn.classList.add('bg-sky-500', 'text-white');
+        micBtn.classList.add('animate-pulse');
+      }
+      if (banner) {
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      }
+      if (status) status.innerText = "Слушаю вас...";
     } else {
-      this.start();
+      if (micBtn) {
+        micBtn.classList.remove('bg-sky-500', 'text-white', 'animate-pulse');
+        micBtn.classList.add('bg-slate-800', 'text-sky-400');
+      }
+      if (banner) {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }
     }
   }
 
   start() {
-    if (!this.recognition) {
-      alert("Ваш браузер не поддерживает голосовой ввод Web Speech API. Рекомендуется Google Chrome, Edge или Яндекс.Браузер.");
-      return;
-    }
+    if (!this.recognition) return alert("Голосовой ввод не поддерживается браузером.");
     try {
       this.recognition.start();
-    } catch (e) {
-      console.warn("Speech start exception:", e);
-    }
+    } catch (e) {}
   }
 
   stop() {
@@ -99,9 +111,14 @@ class VoiceAssistant {
         this.recognition.stop();
       } catch (e) {}
     }
-    clinicalAudio.playChimeEnd();
-    if (this.onStatusChange) {
-      this.onStatusChange({ supported: true, listening: false, text: "Микрофон отключен" });
+    this.updateUI(false);
+    if (window.clinicalAudio) window.clinicalAudio.playChimeEnd();
+    
+    // Auto submit final text
+    if (this.fullTranscript.trim() && this.onFinal) {
+      this.onFinal(this.fullTranscript);
     }
   }
 }
+
+window.MedicalSpeech = MedicalSpeech;

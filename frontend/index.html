@@ -1,142 +1,68 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Подручный Доктор | Evidence-Based Medical AI Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ИИ Доктор - Медицинский Ассистент</title>
   
-  <!-- Tailwind CSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0f9ff',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Custom styles -->
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+  
+  <!-- Client-side Engines -->
+  <script src="/js/clinical_engine.js"></script>
+  <script src="/js/llm_client.js"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
-  <!-- Top Header Bar -->
-  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
-    <div class="max-w-5xl mx-auto flex items-center justify-between">
-      
-      <!-- Logo & Clinical Certification Badge -->
+  <!-- Header -->
+  <header class="bg-slate-900/80 backdrop-blur-lg border-b border-slate-800 z-10 flex-shrink-0 safe-top">
+    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-xl shadow-lg shadow-sky-500/20">
+        <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center shadow-lg shadow-sky-600/20 text-white text-lg">
           🩺
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base font-bold text-white tracking-wide">Подручный Доктор</h1>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              EBM Verified
-            </span>
-          </div>
-          <p class="text-xs text-slate-400">Доказательная медицина • Стандарты ВОЗ, AHA, ERC, PubMed</p>
+          <h1 class="text-sm font-bold text-white leading-tight">ИИ Доктор</h1>
+          <p class="text-[10px] text-emerald-400 font-medium">Бесплатная нейросеть EBM</p>
         </div>
       </div>
-
-      <!-- Emergency Hotline & Controls -->
-      <div class="flex items-center gap-2 md:gap-3">
-        <!-- Direct 103 Hotline Button -->
-        <a href="tel:103" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 text-xs font-bold transition shadow-sm">
-          <span>📞</span>
-          <span>103 / 112 Скорая</span>
-        </a>
-
-        <!-- TTS Readout Toggle -->
-        <button id="tts-toggle" title="Озвучивать ответ врача вслух" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition">
-          <span class="text-sm">🔊</span>
-        </button>
-
-        <!-- Settings Gear -->
-        <button id="settings-btn" title="Настройки API и модели" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition">
-          <span class="text-sm">⚙️</span>
+      
+      <div class="flex items-center gap-2">
+        <button id="tts-toggle" onclick="medicalApp.toggleTTS()" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all opacity-50" title="Включить озвучку">
+          🔊
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- Quick Symptoms & Emergency Chips Carousel -->
-  <section class="bg-slate-900/60 border-b border-slate-800/80 px-4 py-2.5 overflow-x-auto no-scrollbar">
-    <div class="max-w-5xl mx-auto flex items-center gap-2 text-xs whitespace-nowrap">
-      <span class="text-slate-400 font-semibold flex items-center gap-1">
-        <span>⚡</span> Быстрый запуск:
-      </span>
-      <button onclick="medicalApp.sendMessage('Как правильно померить пульс? Пошаговая инструкция с картинкой')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        💓 Замер пульса
-      </button>
-      <button onclick="medicalApp.sendMessage('Человек не дышит, нет пульса! Как делать СЛР?')" class="px-3 py-1.5 rounded-lg bg-red-950/70 hover:bg-red-900 text-red-200 border border-red-800 transition font-bold">
-        🚨 Реанимация (СЛР)
-      </button>
-      <button onclick="medicalApp.sendMessage('Подозрение на инсульт: перекосило лицо и онемела рука. Тест FAST')" class="px-3 py-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-900 text-amber-200 border border-amber-800 transition font-bold">
-        🧠 Тест на инсульт (FAST)
-      </button>
-      <button onclick="medicalApp.sendMessage('Человек подавился едой и задыхается, как делать прием Геймлиха?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🫁 Прием Геймлиха
-      </button>
-      <button onclick="medicalApp.sendMessage('Сильное артериальное кровотечение из раны, как наложить жгут?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🩹 Кровотечение и жгут
-      </button>
-      <button onclick="medicalApp.sendMessage('Термический ожог кипятком на руке, что делать?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🔥 Ожог кипятком
-      </button>
-      <button onclick="medicalApp.sendMessage('Высокая температура 39 у взрослого, как безопасно сбить?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🤒 Температура 39°C
-      </button>
-      <button onclick="medicalApp.sendMessage('Подвернул ногу, опух голеностоп, как применять протокол RICE?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🦶 Протокол RICE
-      </button>
-      <button onclick="medicalApp.sendMessage('Как правильно измерить артериальное давление тонометром?')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-        🩸 Давление тонометром
-      </button>
-    </div>
-  </section>
-
-  <!-- Main Chat / Clinical View Area -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col justify-between overflow-hidden">
-    
-    <div id="chat-messages" class="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+  <!-- Main Chat Area -->
+  <main id="chat-messages" class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth pb-32">
+    <div class="max-w-4xl mx-auto flex flex-col justify-end min-h-full">
       
-      <!-- Welcome Medical Dashboard Card -->
-      <div id="welcome-card" class="p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-2xl text-center md:text-left">
-        <div class="flex flex-col md:flex-row items-center gap-6">
-          <div class="w-20 h-20 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-4xl shadow-inner flex-shrink-0">
+      <!-- Welcome Card -->
+      <div id="welcome-card" class="bg-slate-900/60 border border-sky-900/50 rounded-2xl p-6 mb-6 shadow-2xl mt-auto">
+        <div class="flex flex-col md:flex-row gap-5 items-center md:items-start text-center md:text-left">
+          <div class="w-16 h-16 bg-sky-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-sky-600/30 flex-shrink-0">
             👨‍⚕️
           </div>
           <div class="flex-1">
-            <h2 class="text-xl font-bold text-white mb-2">Здравствуйте! Я ваш подручный доктор</h2>
+            <h2 class="text-xl font-bold text-white mb-2">Здравствуйте! Я ваш медицинский ИИ-ассистент</h2>
             <p class="text-sm text-slate-300 leading-relaxed mb-4">
-              В мою базу заложены клинические рекомендации Всемирной организации здравоохранения (ВОЗ), протоколы Европейского совета по реанимации (ERC), мета-анализы Cochrane Library и PubMed. 
+              В мою базу заложены клинические рекомендации Всемирной организации здравоохранения (ВОЗ), протоколы Европейского совета по реанимации (ERC) и мета-анализы Cochrane Library. 
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
                 <span class="text-sky-400 font-bold block mb-1">🎙️ Голосовой ввод</span>
-                Нажмите микрофон и опишите, что вас беспокоит.
+                <span class="text-slate-400">Нажмите микрофон и опишите, что вас беспокоит.</span>
               </div>
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
+              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
                 <span class="text-emerald-400 font-bold block mb-1">🖼️ Наглядные схемы</span>
-                Пошаговые иллюстрации манипуляций и первой помощи.
+                <span class="text-slate-400">Пошаговые иллюстрации манипуляций и первой помощи.</span>
               </div>
-              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                <span class="text-red-400 font-bold block mb-1">🚨 Триаж и Red Flags</span>
-                Мгновенное распознавание жизнеугрожающих состояний.
+              <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
+                <span class="text-red-400 font-bold block mb-1">🚨 Триаж (Red Flags)</span>
+                <span class="text-slate-400">Мгновенное распознавание жизнеугрожающих состояний.</span>
               </div>
             </div>
           </div>
@@ -144,32 +70,32 @@
       </div>
 
     </div>
+  </main>
 
-    <!-- Live Speech Transcript Banner -->
-    <div id="voice-banner" class="max-w-5xl mx-auto w-full mb-2 flex items-center justify-between px-4 py-2 bg-slate-900/90 rounded-xl border border-sky-500/30 text-xs shadow-lg">
-      <div class="flex items-center gap-3">
-        <div id="voice-bars" class="hidden flex items-center h-4">
-          <span class="wave-bar"></span>
-          <span class="wave-bar"></span>
-          <span class="wave-bar"></span>
-          <span class="wave-bar"></span>
-          <span class="wave-bar"></span>
+  <!-- Bottom Input Dock (Fixed) -->
+  <div class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 p-3 pb-safe z-20">
+    <div class="max-w-4xl mx-auto">
+      
+      <!-- Live Voice Banner -->
+      <div id="voice-banner" class="hidden items-center justify-between px-4 py-2 mb-2 bg-sky-900/40 rounded-xl border border-sky-500/30 text-xs shadow-lg">
+        <div class="flex items-center gap-3 w-full">
+          <div id="voice-bars" class="flex items-center h-4 flex-shrink-0">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+          <span id="voice-status" class="text-sky-100 italic truncate flex-1">
+            Слушаю вас...
+          </span>
         </div>
-        <span id="voice-status" class="text-slate-300 italic truncate max-w-[280px] sm:max-w-md">
-          Нажмите на микрофон для голосового описания симптомов
-        </span>
       </div>
-      <span class="text-[11px] text-slate-500 font-mono hidden sm:inline" id="active-model-info">
-        DeepSeek-V3 • Fast EBM
-      </span>
-    </div>
 
-    <!-- Bottom Input Dock -->
-    <div class="w-full bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-800 p-2.5 shadow-2xl">
-      <div class="flex items-end gap-2">
+      <div class="flex items-end gap-2 bg-slate-950/50 rounded-2xl p-1.5 border border-slate-800 focus-within:border-sky-700 transition-colors">
         
         <!-- Big Glowing Microphone Button -->
-        <button id="mic-btn" title="Включить / выключить прослушивание голоса" class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-800 hover:bg-sky-600 text-sky-400 hover:text-white flex items-center justify-center text-xl transition-all shadow-md">
+        <button id="mic-btn" title="Голосовой ввод" class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-800 hover:bg-sky-600 text-sky-400 hover:text-white flex items-center justify-center text-xl transition-all shadow-md">
           🎙️
         </button>
 
@@ -178,59 +104,36 @@
           <textarea 
             id="user-input" 
             rows="1" 
-            placeholder="Опишите симптомы или нажмите микрофон..." 
-            class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl py-3 px-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 resize-none max-h-32 transition"
+            placeholder="Опишите симптомы..." 
+            class="w-full bg-transparent py-3 px-2 text-[15px] text-slate-100 placeholder-slate-500 focus:outline-none resize-none max-h-32"
           ></textarea>
         </div>
 
         <!-- Send Button -->
-        <button id="send-btn" title="Отправить" class="w-12 h-12 flex-shrink-0 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center text-lg font-bold transition shadow-lg shadow-sky-600/30">
+        <button id="send-btn" title="Отправить" class="w-12 h-12 flex-shrink-0 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center text-lg font-bold transition shadow-lg shadow-sky-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
           ➤
         </button>
 
       </div>
     </div>
-
-  </main>
+  </div>
 
   <!-- Interactive Procedure Detail Modal -->
-  <div id="procedure-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div id="procedure-modal-content" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+  <div id="procedure-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div id="procedure-modal-content" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90dvh] overflow-y-auto shadow-2xl relative">
       <!-- Dynamically filled by proceduresManager -->
     </div>
   </div>
 
-  <!-- Settings Modal -->
-  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <span>⚙️</span> Настройки модели и API
-        </h3>
-        <button onclick="medicalApp.closeSettings()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-
-      <div class="space-y-4 text-sm">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">API Ключ (DeepSeek / OpenRouter / OpenAI)</label>
-          <input id="settings-key" type="password" placeholder="sk-..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">API Base URL</label>
-          <input id="settings-url" type="text" placeholder="https://api.deepseek.com/v1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Модель</label>
-          <input id="settings-model" type="text" placeholder="deepseek-chat" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 mt-6 pt-3 border-t border-slate-800">
-        <button onclick="medicalApp.closeSettings()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Отмена</button>
-        <button onclick="medicalApp.saveSettings()" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold">Сохранить</button>
-      </div>
-    </div>
-  </div>
+  <!-- CSS support for safe area on mobile -->
+  <style>
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 12px);
+    }
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+  </style>
 
   <!-- Application Scripts -->
   <script src="/js/metronome.js"></script>
