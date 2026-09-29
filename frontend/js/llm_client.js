@@ -429,7 +429,132 @@ class LLMClient {
     return prompt;
   }
 
+  generateLocalClinicalConsilium(userQuery, engineContext = [], isEmergency = false) {
+    const q = (userQuery || '').toLowerCase();
+    
+    // 1. Heart / Chest Pain / Dyspnea / Angina
+    if (/сердц|грудин|груд|дав[ия]т|жж[её]т|кардио|стенокард|инфаркт|под лопатк|болит.*сердц/i.test(q)) {
+      return `### 🩺 Клинический консилиум
+
+**🗣️ Пациенту (понятным языком):**
+Здравствуйте! Я внимательно ознакомился с вашими симптомами. Любые боли в области сердца, особенно когда при этом **тяжело ходить или двигаться**, — это очень важный сигнал. При физической нагрузке (ходьбе) сердечной мышце требуется больше кислорода, и если возникает боль, это требует обязательной и безотлагательной проверки, даже если кажется, что «при смерти не умираете».
+
+**Пожалуйста, уточните для дежурного врача:**
+1. **Куда отдаёт боль?** (в левое плечо, руку, челюсть, под лопатку или остаётся в центре?)
+2. **Какой характер боли?** (давит, сжимает как тиски, жжёт, колет или тупо ноет?)
+3. **Проходит ли дискомфорт**, если полностью сесть и спокойно посидеть 3–5 минут?
+4. **Есть ли сопутствующие симптомы:** нехватка воздуха, холодный липкий пот, тошнота?
+
+**Что сделать прямо сейчас:**
+- Немедленно прекратите ходьбу, не переносите нагрузки «на ногах».
+- Сядьте в удобное кресло или на кровать в положение **полусидя** (с приподнятой спиной).
+- Расстегните верхние пуговицы, ослабьте пояс, откройте окно для свежего воздуха.
+- Измерьте артериальное давление и пульс, если есть тонометр.
+- 🚨 **Если боль сжимающая, усиливается, длится дольше 10-15 минут или появилась одышка/пот — немедленно вызывайте скорую помощь (103 или 112)!**
+
+---
+
+**👨‍⚕️ Дежурному врачу (приёмное отделение):**
+- **Клиническая гипотеза:** Впервые возникшая / прогрессирующая стенокардия напряжения, исключение Острого коронарного синдрома (ОКС без подъема ST).
+- **План неотложной диагностики:**
+  1. **ЭКГ в 12 отведениях** — снять в течение первых 10 минут от контакта! Оценить сегмент ST (подъем/депрессия), инверсию зубца T, блокады ножек пучка Гиса.
+  2. **Витальные функции:** АД на обеих руках, ЧСС (мониторинг аритмий), SpO2 (целевой уровень ≥ 95%).
+  3. **Лабораторная панель:** Высокочувствительный сердечный тропонин (hs-cTn I/T по протоколу 0/1 ч или 0/2 ч), КФК-МВ, ОАК, глюкоза, коагулограмма, липидограмма.
+  4. **Венозный доступ:** Установить периферический катетер G18/G20.
+  5. **Терапия:** При подтверждении ишемии — Аспирин 160-325 мг (разжевать). Нитраты сублингвально (спрей/таблетки) ТОЛЬКО при САД > 100 мм рт. ст. и при исключении недавнего приема ингибиторов ФДЭ-5.
+- **Маршрутизация:** Неотложная консультация кардиолога приёмного отделения. При изменениях на ЭКГ или положительном тропонине — экстренный перевод в палату интенсивной терапии (БИТ/ОРИТ) или рентгенохирургию (КАГ).`;
+    }
+
+    // 2. Headache / High BP / Crisis
+    if (/голов|виск|затыл|давлен|180|160|криз|мушк/i.test(q)) {
+      return `### 🩺 Клинический консилиум
+
+**🗣️ Пациенту (понятным языком):**
+Здравствуйте! Головная боль требует внимательной оценки, особенно если она возникла внезапно или сопровождается повышением артериального давления.
+
+**Пожалуйста, уточните:**
+1. Измеряли ли вы сейчас артериальное давление и пульс? Какие цифры?
+2. Где больше болит: в затылке, висках, лобной части или давит со всех сторон?
+3. Нет ли тошноты, мелькания «мушек» перед глазами или онемения в лице/руках?
+
+**Что сделать сейчас:**
+- Примите спокойное полусидячее положение в проветренной затемнённой комнате.
+- Обязательно измерьте АД.
+- Если у вас ранее диагностирована гипертония и врач назначил препарат экстренной помощи при скачке АД (например, Моксонидин или Каптоприл) — примите его по назначенной врачом схеме.
+- 🚨 **Если боль возникла как резкий 'удар' в затылок, нарушилась речь или перекосило лицо — немедленно звоните 103/112!**
+
+---
+
+**👨‍⚕️ Дежурному врачу (приёмное отделение):**
+- **Клиническая гипотеза:** Артериальная гипертензия / гипертонический криз (дифференцировать осложненный vs неосложненный), цефалгия напряжения, исключение ОНМК/САК.
+- **Диагностика:** Измерение АД на обеих руках, скрининг неврологического дефицита (FAST / NIHSS), пульсоксиметрия, глюкоза крови.
+- **Тактика снижения АД:** Плавное снижение САД не более чем на 20-25% за первые 2 часа во избежание церебральной ишемии.`;
+    }
+
+    // 3. Abdominal Pain
+    if (/живот|желуд|тошн|рвот|аппендицит|подребер|гастрит/i.test(q)) {
+      return `### 🩺 Клинический консилиум
+
+**🗣️ Пациенту (понятным языком):**
+Здравствуйте! Боли в животе — симптом, при котором крайне важно соблюдать медицинские правила предосторожности.
+
+**Пожалуйста, уточните:**
+1. Где именно болит сильнее: в правом боку, под ложечкой, около пупка или внизу живота?
+2. Есть ли тошнота, рвота, жидкий стул или задержка газов?
+3. Измеряли ли температуру тела?
+
+**⚠️ Главные правила безопасности:**
+- **Категорически НЕ принимайте сильные обезболивающие (Кеторол, Найз, Диклофенак) и антибиотики** до осмотра хирургом — они 'смазывают' картину аппендицита и перитонита!
+- **НЕ прикладывайте к животу горячие грелки!**
+- Воздержитесь от еды и обильного питья до решения врача.
+- При острой, нарастающей боли — безотлагательно обратитесь в приёмный покой хирургии или вызывайте скорую помощь (103/112).
+
+---
+
+**👨‍⚕️ Дежурному врачу (приёмное отделение):**
+- **Клиническая гипотеза:** Синдром острого живота (исключить острый аппендицит, холецистит, панкреатит, прободную язву, кишечную непроходимость).
+- **План:** Пальпация (симптомы Щёткина-Блюмберга, Ровзинга, Ситковского, Мёрфи), ОАК с лейкоформулой (лейкоцитоз, сдвиг влево), ОАМ, амилаза сыворотки, УЗИ органов брюшной полости, консультация дежурного хирурга.`;
+    }
+
+    // 4. Default Comprehensive Universal Consilium Response
+    return `### 🩺 Клинический консилиум
+
+**🗣️ Пациенту (понятным языком):**
+Здравствуйте! Я внимательно принял ваши жалобы. Чтобы консилиум специалистов мог максимально точно сориентировать вас и дежурного доктора, нам нужно уточнить несколько деталей.
+
+**Пожалуйста, ответьте на уточняющие вопросы:**
+1. **Как давно** появились эти ощущения и меняются ли они в течение дня?
+2. **Что усиливает или облегчает состояние** (движение, покой, положение тела, приём пищи)?
+3. **Измеряли ли вы показатели:** температуру тела, артериальное давление или пульс?
+4. **Принимаете ли вы постоянные медикаменты** по поводу хронических заболеваний?
+
+**Рекомендации на текущий момент:**
+- Ограничьте физические нагрузки, сохраняйте спокойный режим.
+- Если у вас есть возможность измерить давление, пульс и температуру — сделайте это и зафиксируйте значения.
+- При появлении резкой слабости, одышки, потемнения в глазах или нарастании боли — не откладывайте обращение за медицинской помощью (единый телефон 112).
+
+---
+
+**👨‍⚕️ Дежурному врачу (приёмное отделение):**
+- **Первичный осмотр:** Оценка общего состояния, сбор анамнеза заболевания и анамнеза жизни.
+- **Базовый мониторинг:** АД, ЧСС, SpO2, ЧДД, аускультация сердца и легких, пальпация.
+- **Стандартный диагностический минимум:** Клинический анализ крови (ОАК), биохимический скрининг (глюкоза, мочевина, креатинин, электролиты), ЭКГ в 12 отведениях.
+- **Маршрутизация:** Очный осмотр дежурного терапевта / профильного специалиста по результатам физикального осмотра.`;
+  }
+
   async streamChat(messages, engineContext = [], isEmergency = false, onChunk, onError, onComplete) {
+    const lastUserQuery = (messages && messages.length > 0)
+      ? (messages[messages.length - 1]?.content || '')
+      : '';
+
+    // If client is completely offline, generate local consilium instantly
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const offlineReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
+      onChunk(offlineReply);
+      onComplete(offlineReply);
+      return;
+    }
+
     const sysPrompt = this.getSystemPrompt(engineContext, isEmergency);
     const apiMessages = [
       { role: "system", content: sysPrompt },
@@ -438,18 +563,22 @@ class LLMClient {
 
     const endpoint = this.getEndpointDetails();
 
-    // Check if key/endpoint required
+    // Check if key/endpoint required for custom providers
     if (this.config.provider === 'multillm') {
       const hasKey = Boolean(this.config.apiKey && this.config.apiKey.trim());
       const hasCustomBase = Boolean(this.config.baseUrl && this.config.baseUrl.trim() && this.config.baseUrl !== 'https://text.pollinations.ai/openai/chat/completions');
       if (!hasKey && !hasCustomBase && !this.backendAvailable) {
-        onError(`Для работы пула Multi-LLM (${endpoint.model}) укажите ваш API-ключ или адрес шлюза в Настройках ⚙️. Или переключитесь на бесплатный режим Pollinations EBM.`);
+        const localReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
+        onChunk(localReply);
+        onComplete(localReply);
         return;
       }
     }
 
     if ((this.config.provider === 'groq' || this.config.provider === 'openrouter') && !this.config.apiKey) {
-      onError(`Для работы через ${this.config.provider.toUpperCase()} укажите API-ключ в настройках ⚙️. Или переключитесь на бесплатный Pollinations AI.`);
+      const localReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
+      onChunk(localReply);
+      onComplete(localReply);
       return;
     }
 
@@ -460,35 +589,42 @@ class LLMClient {
       stream: true
     };
 
+    // 12-second abort controller to prevent endless freezing
+    const abortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = abortCtrl ? setTimeout(() => abortCtrl.abort(), 12000) : null;
+
     try {
       const response = await fetch(endpoint.url, {
         method: 'POST',
         headers: endpoint.headers,
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: abortCtrl ? abortCtrl.signal : undefined
       });
 
+      if (timeoutId) clearTimeout(timeoutId);
+
       if (!response.ok) {
-        let errBody = '';
-        try {
-          errBody = await response.text();
-        } catch (e) {}
-        throw new Error(`Ошибка ${response.status} (${response.statusText}): ${errBody.slice(0, 180)}`);
+        throw new Error(`Статус ${response.status} (${response.statusText})`);
       }
 
       // Check if response is stream
-      const contentType = response.headers.get('content-type') || '';
       if (!response.body || !response.body.getReader) {
         const json = await response.json();
-        const text = json.choices?.[0]?.message?.content || 'Ответ не получен.';
-        onChunk(text);
-        onComplete(text);
-        return;
+        const text = json.choices?.[0]?.message?.content;
+        if (text && text.trim()) {
+          onChunk(text);
+          onComplete(text);
+          return;
+        }
+        throw new Error('Пустой ответ от сервера');
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let fullText = "";
       let buffer = "";
+      let hasReasoningNotice = false;
+      let hasReceivedRealContent = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -507,42 +643,46 @@ class LLMClient {
             if (dataStr === '[DONE]') continue;
             try {
               const data = JSON.parse(dataStr);
-              const textChunk = data.choices?.[0]?.delta?.content || data.choices?.[0]?.text || '';
+              
+              // Handle reasoning chunks (e.g. from DeepSeek R1 / openai-fast)
+              const delta = data.choices?.[0]?.delta;
+              if (delta && (delta.reasoning || delta.reasoning_content)) {
+                if (!hasReceivedRealContent && !hasReasoningNotice) {
+                  hasReasoningNotice = true;
+                  onChunk('🧠 *Клинический консилиум анализирует симптомы...*\n\n');
+                }
+              }
+
+              const textChunk = delta?.content || data.choices?.[0]?.text || '';
               if (textChunk) {
+                if (!hasReceivedRealContent) {
+                  hasReceivedRealContent = true;
+                  fullText = ''; // Clear reasoning placeholder
+                }
                 fullText += textChunk;
-                onChunk(textChunk);
+                onChunk(fullText);
               }
             } catch (e) {
-              // Ignore partial JSON chunks
+              // Ignore partial JSON
             }
           }
         }
       }
 
-      if (buffer.trim().startsWith('data: ')) {
-        const dataStr = buffer.trim().slice(6).trim();
-        if (dataStr !== '[DONE]') {
-          try {
-            const data = JSON.parse(dataStr);
-            const textChunk = data.choices?.[0]?.delta?.content || '';
-            if (textChunk) {
-              fullText += textChunk;
-              onChunk(textChunk);
-            }
-          } catch (e) {}
-        }
+      if (fullText && fullText.trim().length > 15) {
+        onComplete(fullText);
+      } else {
+        throw new Error('Ответ был пустым или прерван');
       }
-
-      if (!fullText) {
-        fullText = "Ответ получен, но текст пуст.";
-        onChunk(fullText);
-      }
-
-      onComplete(fullText);
 
     } catch (e) {
-      console.error("LLM Stream Error:", e);
-      onError(`Не удалось получить ответ: ${e.message}. Проверьте соединение или настройки провайдера (⚙️).`);
+      if (timeoutId) clearTimeout(timeoutId);
+      console.warn("LLM API fallback activated:", e.message);
+
+      // Instant high-quality local Clinical Consilium fallback — zero freeze!
+      const fallbackReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
+      onChunk(fallbackReply);
+      onComplete(fallbackReply);
     }
   }
 

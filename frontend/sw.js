@@ -1,5 +1,5 @@
-// Service Worker for Medical AI Assistant (Offline-First First Aid & Doctor Skills)
-const CACHE_NAME = 'doctor-ebm-v2';
+// Service Worker for Medical AI Assistant (Apple Minimalist Consilium)
+const CACHE_NAME = 'doctor-apple-v5';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -35,15 +35,15 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Кэширование клинических ресурсов для автономной работы...');
+      console.log('[SW] Кэширование клинических ресурсов (v5)...');
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('[SW] Ошибка при предкэшировании части ресурсов', err);
+        console.warn('[SW] Ошибка предкэширования:', err);
       });
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -57,35 +57,70 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Never cache external API requests to LLM endpoints
   const url = new URL(event.request.url);
+
+  // 1. Bypass cache for external APIs & LLMs
   if (
     url.hostname.includes('pollinations.ai') ||
     url.hostname.includes('groq.com') ||
     url.hostname.includes('openrouter.ai') ||
-    url.pathname.includes('/api/chat')
+    url.hostname.includes('openai.com') ||
+    url.pathname.includes('/api/chat') ||
+    url.pathname.includes('/api/health')
   ) {
     return;
   }
 
+  // 2. Network-First strategy for HTML, JS and CSS to guarantee fresh updates
+  const isDocumentOrScript = 
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    event.request.destination === 'script' ||
+    event.request.destination === 'style' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css');
+
+  if (isDocumentOrScript) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, clone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            if (event.request.mode === 'navigate') {
+              return caches.match('./index.html');
+            }
+          });
+        })
+    );
+    return;
+  }
+
+  // 3. Cache-First with Network fallback for static images, SVGs, and JSON data
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(event.request).then((networkResponse) => {
-        // Cache successful local GET requests
         if (
           networkResponse &&
           networkResponse.status === 200 &&
-          event.request.method === 'GET' &&
-          (url.origin === location.origin || url.hostname.includes('cdn'))
+          event.request.method === 'GET'
         ) {
           const clone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -93,11 +128,6 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // Fallback for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
       });
     })
   );

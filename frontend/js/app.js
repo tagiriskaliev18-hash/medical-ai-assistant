@@ -155,7 +155,9 @@ class MedicalApp {
   setupPWA() {
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
       navigator.serviceWorker.register('./sw.js')
-        .then((reg) => console.log('ServiceWorker зарегистрирован:', reg.scope))
+        .then((reg) => {
+          reg.update();
+        })
         .catch((err) => console.log('ServiceWorker не зарегистрирован:', err));
     }
   }

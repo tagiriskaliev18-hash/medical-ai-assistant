@@ -13,11 +13,22 @@
   
   <!-- Tailwind CSS & Apple Minimalist Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="./css/styles.css" rel="stylesheet">
+  <link href="./css/styles.css?v=5" rel="stylesheet">
   
+  <!-- Immediate Cache Invalidation & SW Refresh -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) {
+          regs[i].update();
+        }
+      });
+    }
+  </script>
+
   <!-- Client-side Engines -->
-  <script src="./js/clinical_engine.js"></script>
-  <script src="./js/llm_client.js"></script>
+  <script src="./js/clinical_engine.js?v=5"></script>
+  <script src="./js/llm_client.js?v=5"></script>
 </head>
 <body class="bg-black text-[#F5F5F7] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
@@ -728,11 +739,11 @@
   </div>
 
   <!-- Application Scripts -->
-  <script src="./js/metronome.js"></script>
-  <script src="./js/speech.js"></script>
-  <script src="./js/tts.js"></script>
-  <script src="./js/procedures.js"></script>
-  <script src="./js/medical_skills.js"></script>
-  <script src="./js/app.js"></script>
+  <script src="./js/metronome.js?v=5"></script>
+  <script src="./js/speech.js?v=5"></script>
+  <script src="./js/tts.js?v=5"></script>
+  <script src="./js/procedures.js?v=5"></script>
+  <script src="./js/medical_skills.js?v=5"></script>
+  <script src="./js/app.js?v=5"></script>
 </body>
 </html>
