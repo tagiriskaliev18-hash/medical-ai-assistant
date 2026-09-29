@@ -1,0 +1,124 @@
+/* Modern Medical Theme & Utility Styles */
+:root {
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-light: #e0f2fe;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --bg-main: #0b1120;
+  --bg-card: #151f32;
+  --bg-input: #1e293b;
+  --border: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(21, 31, 50, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Voice Glow Animation */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1.08); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.listening-active {
+  animation: pulse-ring 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* Audio wave bars */
+.wave-bar {
+  display: inline-block;
+  width: 4px;
+  background: #38bdf8;
+  border-radius: 2px;
+  margin: 0 2px;
+  animation: wave 1s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { height: 6px; }
+  50% { height: 26px; }
+}
+
+.wave-bar:nth-child(2) { animation-delay: 0.15s; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s; }
+.wave-bar:nth-child(4) { animation-delay: 0.45s; }
+.wave-bar:nth-child(5) { animation-delay: 0.6s; }
+
+/* Markdown Content Styling in Doctor's Response */
+.markdown-body h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #38bdf8;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  padding-bottom: 0.35rem;
+}
+
+.markdown-body ul, .markdown-body ol {
+  padding-left: 1.4rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.35rem;
+  line-height: 1.5;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Typing cursor animation */
+.cursor-blink::after {
+  content: '▋';
+  color: #38bdf8;
+  animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

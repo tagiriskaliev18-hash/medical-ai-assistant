@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgRec" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="1%" stop-color="#1e293b" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#bgRec)"/>
+
+  <!-- Floor line -->
+  <line x1="20" y1="240" x2="380" y2="240" stroke="#475569" stroke-width="2"/>
+
+  <!-- Person lying on side in recovery position -->
+  <!-- Head tilted back, hand supporting cheek -->
+  <circle cx="80" cy="180" r="22" fill="#64748b"/>
+  <!-- Hand under cheek -->
+  <path d="M 75 195 C 70 215, 95 220, 105 205 Z" fill="#38bdf8"/>
+
+  <!-- Torso turned slightly forward -->
+  <ellipse cx="160" cy="195" rx="55" ry="25" fill="#334155" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Top leg bent at right angle at hip and knee touching ground (prop) -->
+  <path d="M 205 195 L 245 195 L 245 240 L 265 240" stroke="#38bdf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Bottom straight leg -->
+  <path d="M 215 205 L 340 220" stroke="#475569" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Callouts -->
+  <rect x="20" y="25" width="170" height="55" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="105" y="47" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">1. Рука под щекой</text>
+  <text x="105" y="66" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Голова запрокинута</text>
+
+  <rect x="210" y="25" width="170" height="55" rx="8" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="295" y="47" fill="#4ade80" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">2. Колено согнуто под 90°</text>
+  <text x="295" y="66" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Упор от опрокидывания</text>
+
+  <!-- Clear Airway Badge -->
+  <rect x="50" y="255" width="300" height="30" rx="6" fill="#0f172a" stroke="#22c55e" stroke-width="1"/>
+  <text x="200" y="275" fill="#4ade80" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">✓ Дыхательные пути открыты • Нет аспирации рвотой</text>
+</svg>

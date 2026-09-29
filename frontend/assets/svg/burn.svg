@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgBurn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="1%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="waterStream" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="16" fill="url(#bgBurn)"/>
+
+  <!-- Water Tap -->
+  <path d="M 120 20 L 150 20 L 150 65 L 130 65 L 130 35 L 120 35 Z" fill="#94a3b8"/>
+  <ellipse cx="140" cy="65" rx="10" ry="4" fill="#64748b"/>
+
+  <!-- Flowing Cool Water -->
+  <path d="M 132 65 C 130 110, 125 150, 115 220 L 165 220 C 155 150, 150 110, 148 65 Z" fill="url(#waterStream)"/>
+
+  <!-- Hand placed under water stream -->
+  <path d="M 30 180 C 60 175, 110 170, 145 168 C 170 166, 200 155, 230 150 C 235 155, 230 165, 220 170 C 190 180, 170 190, 145 195 C 100 200, 60 205, 30 205 Z" fill="#334155" stroke="#64748b" stroke-width="2"/>
+  
+  <!-- Burn redness area on dorsum of hand -->
+  <ellipse cx="140" cy="180" rx="16" ry="10" fill="#ef4444" opacity="0.8"/>
+
+  <!-- Water splashes -->
+  <circle cx="120" cy="175" r="3" fill="#bae6fd"/>
+  <circle cx="155" cy="170" r="4" fill="#bae6fd"/>
+  <circle cx="160" cy="190" r="3" fill="#bae6fd"/>
+
+  <!-- Cool Water Badge: 15-20 minutes, 15-20°C -->
+  <rect x="220" y="25" width="165" height="60" rx="8" fill="#0369a1" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="302" y="47" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Вода 15–20°C</text>
+  <text x="302" y="68" fill="#e0f2fe" font-family="system-ui, sans-serif" font-size="13" font-weight="900" text-anchor="middle">15 – 20 МИНУТ</text>
+
+  <!-- Strict Contraindications: NO OIL, NO ICE -->
+  <rect x="220" y="100" width="165" height="85" rx="8" fill="#7f1d1d" fill-opacity="0.25" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="302" y="122" fill="#f87171" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" text-anchor="middle">ЗАПРЕЩЕНО!</text>
+  <text x="302" y="142" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">❌ Масло, жир, сметана</text>
+  <text x="302" y="158" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">❌ Спирт, йод, зеленка</text>
+  <text x="302" y="174" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">❌ Лед прямо на кожу</text>
+
+  <!-- Clean cover after cooling -->
+  <rect x="20" y="245" width="360" height="38" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="200" y="268" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle">После охлаждения: накрыть чистой сухой салфеткой без мазей</text>
+</svg>
