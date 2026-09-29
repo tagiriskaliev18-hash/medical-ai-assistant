@@ -1211,6 +1211,208 @@ class MedicalApp {
     });
   }
 
+  // --- DAMUMED MIS / 3H TRIAGE WORKSTATION ---
+  openDamumedModal() {
+    const modal = document.getElementById('damumed-modal');
+    if (!modal || !window.damumedEngine) return;
+    if (!this.damumedSelected) this.damumedSelected = [];
+    this.renderDamumedSyndromes();
+    this.updateDamumedCalculations();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+
+  closeDamumedModal() {
+    const modal = document.getElementById('damumed-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  renderDamumedSyndromes() {
+    const container = document.getElementById('dm-syndromes');
+    if (!container) return;
+    const protocols = window.damumedEngine.protocols;
+    container.innerHTML = Object.values(protocols).map(p => {
+      const idx = this.damumedSelected.indexOf(p.id);
+      const active = idx !== -1;
+      const cls = active
+        ? 'bg-[#30D158]/20 border-[#30D158] text-[#30D158]'
+        : 'bg-black/40 border-white/10 text-[#F5F5F7]';
+      const badge = idx === 0 ? ' <span class="text-[10px] opacity-80">(осн.)</span>' : '';
+      return `<button type="button" onclick="medicalApp.toggleDamumedSyndrome('${p.id}')" class="px-2.5 py-1.5 rounded-full border text-[11px] transition active:scale-95 ${cls}">${p.icon} ${this.escapeHtml(p.name.split(' (')[0])}${badge}</button>`;
+    }).join('');
+  }
+
+  toggleDamumedSyndrome(id) {
+    const idx = this.damumedSelected.indexOf(id);
+    if (idx === -1) this.damumedSelected.push(id);
+    else this.damumedSelected.splice(idx, 1);
+    this.renderDamumedSyndromes();
+    this.updateDamumedCalculations();
+  }
+
+  readDamumedForm() {
+    const val = (id) => (document.getElementById(id)?.value || '').trim();
+    const vitals = {};
+    ['sbp', 'dbp', 'hr', 'spo2', 'rr', 'temp', 'glucose', 'gcs'].forEach(k => {
+      const v = val(`dm-${k}`);
+      if (v !== '') vitals[k] = v;
+    });
+    return {
+      patient: { age: val('dm-age'), gender: val('dm-gender') || 'male', weight: val('dm-weight') || '70' },
+      selectedSyndromes: [...(this.damumedSelected || [])],
+      vitals,
+      customComplaints: val('dm-complaints'),
+      customAnamnesis: val('dm-anamnesis'),
+      customLocalis: val('dm-localis')
+    };
+  }
+
+  updateDamumedCalculations() {
+    if (!window.damumedEngine) return;
+    const form = this.readDamumedForm();
+    const result = window.damumedEngine.generateDamumedExport(form);
+    this.damumedResult = result;
+    const esc = (s) => this.escapeHtml(s);
+
+    // Triage banner
+    const triageEl = document.getElementById('dm-triage');
+    if (triageEl) {
+      const t = result.triage;
+      triageEl.className = `rounded-2xl border p-3 ${t.bgClass}`;
+      triageEl.innerHTML = `
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="font-bold text-[13px]">${esc(t.title)}</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] ${t.badgeClass}">Кат. ${esc(t.code)}</span>
+        </div>
+        <p class="opacity-90 mb-1.5">${esc(t.subtitle)}</p>
+        <ul class="list-disc pl-4 space-y-0.5">${t.reasons.map(r => `<li>${esc(r)}</li>`).join('')}</ul>`;
+    }
+
+    // Protocol panel
+    const protoEl = document.getElementById('dm-protocol');
+    if (protoEl) {
+      if (!form.selectedSyndromes.length) {
+        protoEl.innerHTML = '<p class="text-[#8E8E93] text-center py-2">Выберите синдром, чтобы увидеть протокол МЗ РК, диагностический минимум и неотложную терапию.</p>';
+      } else {
+        const p = result.primaryProto;
+        const weight = Number(form.patient.weight) || 70;
+        const drugs = p.emergencyKit(weight, form.vitals);
+        const list = (items) => `<ul class="list-disc pl-4 space-y-0.5 text-[#D1D1D6]">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>`;
+        protoEl.innerHTML = `
+          <div class="rounded-2xl bg-black/40 border border-white/10 p-3 space-y-1">
+            <div class="font-semibold text-white">${p.icon} ${esc(p.icd10)} — ${esc(p.icd10Name)}</div>
+            <div class="text-[#8E8E93]">${esc(p.kzProtocol)}</div>
+          </div>
+          <div class="rounded-2xl bg-[#FF453A]/10 border border-[#FF453A]/30 p-3">
+            <div class="font-semibold text-[#FF453A] mb-1">⚠️ Исключить жизнеугрожающие состояния</div>
+            ${list(p.ruleOutConditions || [])}
+          </div>
+          <div class="rounded-2xl bg-black/40 border border-white/10 p-3 space-y-2">
+            <div class="font-semibold text-white">🔬 Диагностический минимум</div>
+            <div class="text-[#8E8E93]">Лабораторно:</div>${list(p.diagnosticChecklist?.laboratory || [])}
+            <div class="text-[#8E8E93]">Инструментально:</div>${list(p.diagnosticChecklist?.instrumental || [])}
+          </div>
+          <div class="rounded-2xl bg-black/40 border border-white/10 p-3 space-y-2">
+            <div class="font-semibold text-white">💉 Неотложная терапия (масса ${weight} кг)</div>
+            ${drugs.map(d => `
+              <div class="border-l-2 border-[#30D158] pl-2">
+                <div class="font-semibold text-white">${esc(d.drug)}</div>
+                <div class="text-[#D1D1D6]">${esc(d.dose)} · ${esc(d.route)}</div>
+                ${d.note ? `<div class="text-[#8E8E93]">${esc(d.note)}</div>` : ''}
+                ${d.contraindication ? `<div class="text-[#FF9F0A]">${esc(d.contraindication)}</div>` : ''}
+              </div>`).join('')}
+          </div>
+          <div class="rounded-2xl bg-[#FF9F0A]/10 border border-[#FF9F0A]/30 p-3">
+            <div class="font-semibold text-[#FF9F0A] mb-1">🚩 Красные флаги</div>
+            ${list(p.redFlags || [])}
+          </div>`;
+      }
+    }
+
+    // Damumed fields with per-field copy
+    const fieldsEl = document.getElementById('dm-fields');
+    if (fieldsEl) {
+      const labels = {
+        complaints: 'Жалобы',
+        anamnesis: 'Анамнез заболевания',
+        statusPraesens: 'Объективный статус',
+        statusLocalis: 'Локальный статус',
+        diagnosis: 'Диагноз',
+        diagnosticsPlan: 'План обследования',
+        prescriptions: 'Лист назначений'
+      };
+      fieldsEl.innerHTML = Object.entries(labels).map(([key, label]) => `
+        <div class="rounded-xl bg-black/40 border border-white/10 p-2.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-semibold text-[#8E8E93]">${label}</span>
+            <button onclick="medicalApp.copyDamumedField('${key}', this)" class="px-2 py-0.5 bg-white/10 text-white rounded-full text-[10px] active:scale-95">Копировать</button>
+          </div>
+          <pre class="whitespace-pre-wrap font-sans text-[11px] text-[#D1D1D6] leading-relaxed">${esc(result.fields[key])}</pre>
+        </div>`).join('');
+    }
+  }
+
+  async copyTextToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      // Fallback for insecure contexts / older mobile browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (_) {}
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  async copyDamumedField(key, btn) {
+    if (!this.damumedResult) this.updateDamumedCalculations();
+    const text = this.damumedResult?.fields?.[key];
+    if (!text) return;
+    const ok = await this.copyTextToClipboard(text);
+    if (btn) {
+      const prev = btn.textContent;
+      btn.textContent = ok ? '✓ Скопировано' : 'Ошибка';
+      setTimeout(() => { btn.textContent = prev; }, 1500);
+    }
+  }
+
+  async copyDamumedFull() {
+    this.updateDamumedCalculations();
+    const ok = await this.copyTextToClipboard(this.damumedResult.fields.fullNote);
+    alert(ok ? '✅ Осмотр скопирован! Вставьте его в Damumed.' : '❌ Не удалось скопировать. Выделите текст вручную.');
+  }
+
+  sendDamumedToChat() {
+    this.updateDamumedCalculations();
+    const { triage, primaryProto, fields } = this.damumedResult;
+    const form = this.readDamumedForm();
+    if (!form.selectedSyndromes.length && !form.customComplaints) {
+      alert('Выберите хотя бы один синдром или введите жалобы.');
+      return;
+    }
+    const vitalsStr = Object.entries(form.vitals).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(', ') || 'не введены';
+    const prompt = `Приёмный покой. Пациент: ${form.patient.age || '?'} лет, ${form.patient.gender === 'female' ? 'ж' : 'м'}, ${form.patient.weight} кг.
+Жалобы: ${fields.complaints}
+Анамнез: ${fields.anamnesis}
+Витальные: ${vitalsStr}
+Триаж: ${triage.title}
+Предварительно: ${primaryProto.icd10} ${primaryProto.icd10Name}
+Проверь дифференциальный диагноз, план обследования и неотложную терапию по протоколам МЗ РК.`;
+    this.closeDamumedModal();
+    this.sendMessage(prompt);
+  }
+
   insertSkillResultToChat(text) {
     this.closeAllModals();
     this.sendMessage(text);
@@ -1226,6 +1428,7 @@ class MedicalApp {
     this.closeLabsModal();
     this.closeDrugsModal();
     this.closeSOAPModal();
+    this.closeDamumedModal();
     if (window.proceduresManager) {
       window.proceduresManager.closeModal();
     }

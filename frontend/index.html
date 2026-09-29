@@ -13,7 +13,7 @@
   
   <!-- Tailwind CSS & Apple Minimalist Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="./css/styles.css?v=6" rel="stylesheet">
+  <link href="./css/styles.css?v=7" rel="stylesheet">
   
   <!-- Immediate Cache Invalidation & SW Refresh -->
   <script>
@@ -27,8 +27,9 @@
   </script>
 
   <!-- Client-side Engines -->
-  <script src="./js/clinical_engine.js?v=6"></script>
-  <script src="./js/llm_client.js?v=6"></script>
+  <script src="./js/clinical_engine.js?v=7"></script>
+  <script src="./js/damumed_engine.js?v=7"></script>
+  <script src="./js/llm_client.js?v=7"></script>
 </head>
 <body class="bg-black text-[#F5F5F7] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
@@ -52,6 +53,13 @@
       
       <!-- Actions -->
       <div class="flex items-center gap-2">
+        <!-- Damumed MIS & 3H Triage Workstation Quick Launch -->
+        <button onclick="medicalApp.openDamumedModal()" class="h-8 px-2.5 sm:px-3 rounded-full bg-[#30D158]/20 hover:bg-[#30D158]/30 border border-[#30D158]/40 active:scale-95 text-[#30D158] text-xs font-semibold flex items-center gap-1.5 transition shadow-sm" title="АРМ Приёмный покой / Триаж МЗ РК / Damumed">
+          <span>🏥</span>
+          <span class="hidden sm:inline">Damumed 3H</span>
+          <span class="sm:hidden">3H</span>
+        </button>
+
         <!-- Call 112 Quick Dial -->
         <a href="tel:112" class="h-8 px-3 rounded-full bg-[#FF453A] active:opacity-80 text-white text-xs font-semibold flex items-center gap-1 transition shadow-sm" title="Экстренный вызов скорой помощи">
           <span>🚨</span>
@@ -89,6 +97,9 @@
 
         <!-- Quick Complaint Chips -->
         <div class="flex flex-wrap items-center justify-center gap-2 max-w-lg">
+          <button onclick="medicalApp.openDamumedModal()" class="apple-chip !border-[#30D158]/60 !text-[#30D158] !bg-[#30D158]/10 font-bold shadow-sm">
+            🏥 Приёмный покой: 3H Триаж & Damumed
+          </button>
           <button onclick="medicalApp.sendMessage('Болит голова, второй день')" class="apple-chip">
             🤕 Головная боль
           </button>
@@ -224,13 +235,13 @@
           <span class="text-xs text-[#8E8E93]">›</span>
         </button>
 
-        <button onclick="medicalApp.closeToolsSheet(); medicalApp.openSOAPModal()" class="w-full p-3 rounded-2xl hover:bg-white/5 active:bg-white/10 flex items-center gap-3 transition text-left">
-          <span class="w-9 h-9 rounded-xl bg-[#BF5AF2]/15 text-[#BF5AF2] flex items-center justify-center text-lg">📝</span>
+        <button onclick="medicalApp.closeToolsSheet(); medicalApp.openDamumedModal()" class="w-full p-3 rounded-2xl hover:bg-white/5 active:bg-white/10 flex items-center gap-3 transition text-left border border-[#30D158]/30 bg-[#30D158]/5">
+          <span class="w-9 h-9 rounded-xl bg-[#30D158]/20 text-[#30D158] flex items-center justify-center text-lg">🏥</span>
           <div class="flex-1">
-            <span class="font-medium text-white block">Генератор осмотра SOAP</span>
-            <span class="text-xs text-[#8E8E93]">Готовый текст протокола для вставки в КМИС / Дамумед</span>
+            <span class="font-medium text-white block">АРМ Приёмный покой (3H + Damumed)</span>
+            <span class="text-xs text-[#30D158]">Триаж МЗ РК, протоколы, фармакотерапия и экспорт в Damumed</span>
           </div>
-          <span class="text-xs text-[#8E8E93]">›</span>
+          <span class="text-xs text-[#30D158]">›</span>
         </button>
 
         <button onclick="medicalApp.closeToolsSheet(); medicalApp.showEmergencySummaryModal()" class="w-full p-3 rounded-2xl hover:bg-white/5 active:bg-white/10 flex items-center gap-3 transition text-left">
@@ -738,12 +749,112 @@
     </div>
   </div>
 
+  <!-- Damumed MIS / 3H Triage Workstation Modal -->
+  <div id="damumed-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#1C1C1E] border border-white/10 rounded-[24px] max-w-2xl w-full max-h-[92dvh] flex flex-col shadow-2xl">
+      <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏥</span>
+          <div>
+            <h3 class="text-base font-semibold text-white">АРМ Приёмный покой</h3>
+            <p class="text-[11px] text-[#8E8E93]">Триаж 3H МЗ РК · протоколы · экспорт в Damumed</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeDamumedModal()" class="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center text-sm">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4 text-xs">
+        <!-- Patient -->
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Возраст</label>
+            <input type="number" inputmode="numeric" id="dm-age" placeholder="лет" oninput="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Пол</label>
+            <select id="dm-gender" onchange="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+              <option value="male">Мужской</option>
+              <option value="female">Женский</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Масса (кг)</label>
+            <input type="number" inputmode="decimal" id="dm-weight" value="70" oninput="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+          </div>
+        </div>
+
+        <!-- Syndromes -->
+        <div>
+          <label class="block text-[#8E8E93] mb-1.5">Синдромы (первый выбранный — основной)</label>
+          <div id="dm-syndromes" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Vitals -->
+        <div>
+          <label class="block text-[#8E8E93] mb-1.5">Витальные показатели</label>
+          <div class="grid grid-cols-4 gap-2">
+            <input type="number" inputmode="numeric" id="dm-sbp" placeholder="САД" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="numeric" id="dm-dbp" placeholder="ДАД" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="numeric" id="dm-hr" placeholder="ЧСС" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="numeric" id="dm-spo2" placeholder="SpO2 %" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="numeric" id="dm-rr" placeholder="ЧДД" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="decimal" step="0.1" id="dm-temp" placeholder="t °C" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="decimal" step="0.1" id="dm-glucose" placeholder="Глюкоза" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+            <input type="number" inputmode="numeric" min="3" max="15" id="dm-gcs" placeholder="ШКГ" oninput="medicalApp.updateDamumedCalculations()" class="bg-black/50 border border-white/10 rounded-xl p-2 text-white">
+          </div>
+        </div>
+
+        <!-- Triage result -->
+        <div id="dm-triage" class="rounded-2xl border p-3"></div>
+
+        <!-- Protocol details -->
+        <div id="dm-protocol" class="space-y-3"></div>
+
+        <!-- Free text -->
+        <div class="space-y-2">
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Жалобы (необязательно — иначе из синдромов)</label>
+            <textarea id="dm-complaints" rows="2" oninput="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Анамнез заболевания</label>
+            <textarea id="dm-anamnesis" rows="2" oninput="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[#8E8E93] mb-1">Локальный статус</label>
+            <textarea id="dm-localis" rows="2" oninput="medicalApp.updateDamumedCalculations()" class="w-full bg-black/50 border border-white/10 rounded-xl p-2 text-white resize-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Damumed fields -->
+        <div class="space-y-2 pt-2 border-t border-white/10">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-white">Поля для Damumed</span>
+            <button onclick="medicalApp.copyDamumedFull()" class="px-3 py-1 bg-[#30D158] text-black rounded-full text-xs font-semibold active:scale-95">
+              📋 Копировать весь осмотр
+            </button>
+          </div>
+          <div id="dm-fields" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-white/10 flex justify-between gap-2">
+        <button onclick="medicalApp.sendDamumedToChat()" class="px-4 py-2 bg-[#0A84FF] text-white rounded-full text-xs font-semibold active:scale-95">
+          💬 Обсудить в консилиуме
+        </button>
+        <button onclick="medicalApp.closeDamumedModal()" class="px-4 py-2 bg-white/10 text-[#8E8E93] rounded-full text-xs">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Scripts -->
-  <script src="./js/metronome.js?v=6"></script>
-  <script src="./js/speech.js?v=6"></script>
-  <script src="./js/tts.js?v=6"></script>
-  <script src="./js/procedures.js?v=6"></script>
-  <script src="./js/medical_skills.js?v=6"></script>
-  <script src="./js/app.js?v=6"></script>
+  <script src="./js/metronome.js?v=7"></script>
+  <script src="./js/speech.js?v=7"></script>
+  <script src="./js/tts.js?v=7"></script>
+  <script src="./js/procedures.js?v=7"></script>
+  <script src="./js/medical_skills.js?v=7"></script>
+  <script src="./js/app.js?v=7"></script>
 </body>
 </html>
