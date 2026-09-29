@@ -10,26 +10,52 @@ class ProceduresManager {
   }
 
   async loadProcedures() {
+    if (window.clinicalEngine && window.clinicalEngine.proceduresMap && Object.keys(window.clinicalEngine.proceduresMap).length > 0) {
+      this.procedures = { ...window.clinicalEngine.proceduresMap };
+      return;
+    }
+    try {
+      const res = await fetch('./assets/data/procedures.json');
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.procedures || []);
+        list.forEach(p => {
+          this.procedures[p.id] = p;
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn("Could not load ./assets/data/procedures.json", e);
+    }
     try {
       const res = await fetch('/api/procedures');
-      const data = await res.json();
-      data.forEach(p => {
-        this.procedures[p.id] = p;
-      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.procedures || []);
+        list.forEach(p => {
+          this.procedures[p.id] = p;
+        });
+      }
     } catch (e) {
-      console.warn("Could not load procedures", e);
+      console.warn("Could not load procedures from API", e);
+    }
+  }
+
+  syncFromEngine(proceduresMap) {
+    if (proceduresMap && typeof proceduresMap === 'object') {
+      this.procedures = { ...this.procedures, ...proceduresMap };
     }
   }
 
   renderCard(procId) {
-    const p = this.procedures[procId];
+    const p = this.procedures[procId] || (window.clinicalEngine && window.clinicalEngine.proceduresMap && window.clinicalEngine.proceduresMap[procId]);
     if (!p) return '';
 
     return `
       <div class="procedure-card my-4 p-4 rounded-xl border border-sky-700/50 bg-slate-800/90 shadow-xl overflow-hidden transition-all hover:border-sky-500">
         <div class="flex flex-col md:flex-row items-center gap-4">
           <div class="w-full md:w-44 h-36 flex-shrink-0 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 p-1 flex items-center justify-center">
-            <img src="/assets/svg/${p.svg_icon}" alt="${p.title}" class="w-full h-full object-contain cursor-pointer hover:scale-105 transition-transform" onclick="proceduresManager.openModal('${p.id}')">
+            <img src="./assets/svg/${p.svg_icon}" alt="${p.title}" class="w-full h-full object-contain cursor-pointer hover:scale-105 transition-transform" onclick="proceduresManager.openModal('${p.id}')">
           </div>
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
@@ -63,7 +89,7 @@ class ProceduresManager {
   }
 
   openModal(procId) {
-    const p = this.procedures[procId];
+    const p = this.procedures[procId] || (window.clinicalEngine && window.clinicalEngine.proceduresMap && window.clinicalEngine.proceduresMap[procId]);
     if (!p) return;
     this.activeProcedure = p;
 
@@ -98,7 +124,7 @@ class ProceduresManager {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
           <div class="flex flex-col items-center justify-center bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <img src="/assets/svg/${p.svg_icon}" alt="${p.title}" class="max-h-72 w-auto object-contain">
+            <img src="./assets/svg/${p.svg_icon}" alt="${p.title}" class="max-h-72 w-auto object-contain">
             <div class="mt-3 text-xs text-slate-400 text-center italic">
               Клинический источник: ${p.guideline || 'ERC/WHO Protocols'}
             </div>

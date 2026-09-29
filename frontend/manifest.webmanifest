@@ -1,0 +1,17 @@
+{
+  "name": "ИИ Доктор - Доказательная Медицина",
+  "short_name": "ИИ Доктор",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0284c7",
+  "description": "Интеллектуальная система первой помощи и клинической маршрутизации на основе доказательной медицины (EBM/WHO/ERC)",
+  "icons": [
+    {
+      "src": "./assets/svg/cpr.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

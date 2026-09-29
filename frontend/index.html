@@ -3,45 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ИИ Доктор - Медицинский Ассистент</title>
+  <title>ИИ Доктор - Доказательный Медицинский Ассистент</title>
   
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="/css/styles.css" rel="stylesheet">
+  <meta name="description" content="Интеллектуальная веб-система первой помощи на основе стандартов доказательной медицины (EBM), протоколов ВОЗ, ERC и AHA.">
+  <meta name="theme-color" content="#0284c7">
+  <link rel="manifest" href="./manifest.webmanifest">
+  
+  <!-- Tailwind CSS & Custom Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="./css/styles.css" rel="stylesheet">
   
   <!-- Client-side Engines -->
-  <script src="/js/clinical_engine.js"></script>
-  <script src="/js/llm_client.js"></script>
+  <script src="./js/clinical_engine.js"></script>
+  <script src="./js/llm_client.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
   <!-- Header -->
-  <header class="bg-slate-900/80 backdrop-blur-lg border-b border-slate-800 z-10 flex-shrink-0 safe-top">
-    <div class="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center shadow-lg shadow-sky-600/20 text-white text-lg">
+  <header class="bg-slate-900/90 backdrop-blur-lg border-b border-slate-800 z-10 flex-shrink-0 safe-top">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-600/30 text-white text-lg">
           🩺
         </div>
         <div>
-          <h1 class="text-sm font-bold text-white leading-tight">ИИ Доктор</h1>
-          <p class="text-[10px] text-emerald-400 font-medium">Бесплатная нейросеть EBM</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm font-bold text-white leading-tight">ИИ Доктор</h1>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800/60 font-mono font-semibold">EBM</span>
+          </div>
+          <p id="current-provider-badge" class="text-[11px] text-emerald-400 font-medium">Бесплатная нейросеть EBM</p>
         </div>
       </div>
       
-      <div class="flex items-center gap-2">
-        <button id="tts-toggle" onclick="medicalApp.toggleTTS()" class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all opacity-50" title="Включить озвучку">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Call 112 / 103 Quick Emergency Dial -->
+        <a href="tel:112" class="px-2.5 py-1.5 rounded-lg bg-red-600/90 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1 transition shadow shadow-red-600/20" title="Экстренный вызов">
+          <span>🚨</span>
+          <span class="hidden sm:inline">112 / 103</span>
+        </a>
+
+        <!-- Export Medical Handoff for 103/112 -->
+        <button onclick="medicalApp.showEmergencySummaryModal()" class="w-9 h-9 sm:w-auto sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1 transition border border-slate-700" title="Сводка для скорой помощи">
+          <span>📋</span>
+          <span class="hidden md:inline">Сводка для скорой</span>
+        </button>
+
+        <!-- TTS Toggle -->
+        <button id="tts-toggle" onclick="medicalApp.toggleTTS()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all opacity-50 border border-slate-700" title="Включить озвучку">
           🔊
+        </button>
+
+        <!-- Settings Modal Button -->
+        <button onclick="medicalApp.openSettingsModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition border border-slate-700" title="Настройки провайдера и ИИ">
+          ⚙️
         </button>
       </div>
     </div>
   </header>
 
+  <!-- Doctor Admitting Physician Quick Action Toolbar -->
+  <nav class="bg-slate-900/95 border-b border-slate-800 px-3 py-1.5 flex-shrink-0 z-10 overflow-x-auto scrollbar-hide">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2 text-xs">
+      <div class="flex items-center gap-1.5 text-slate-400 font-semibold uppercase tracking-wider text-[10px] whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        <span>Хаб врача:</span>
+      </div>
+      <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+        <button onclick="medicalApp.openCalculatorsModal()" class="px-2.5 py-1 rounded-lg bg-sky-950/70 hover:bg-sky-900 text-sky-300 font-semibold flex items-center gap-1 border border-sky-700/50 shadow-sm transition whitespace-nowrap">
+          <span>🧮</span> Калькуляторы (CKD/CURB/CHA)
+        </button>
+        <button onclick="medicalApp.openLabsModal()" class="px-2.5 py-1 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 text-emerald-300 font-semibold flex items-center gap-1 border border-emerald-700/50 shadow-sm transition whitespace-nowrap">
+          <span>🧪</span> Анализы & Синдромы
+        </button>
+        <button onclick="medicalApp.openDrugsModal()" class="px-2.5 py-1 rounded-lg bg-amber-950/70 hover:bg-amber-900 text-amber-300 font-semibold flex items-center gap-1 border border-amber-700/50 shadow-sm transition whitespace-nowrap">
+          <span>💊</span> Лекарства & DDI
+        </button>
+        <button onclick="medicalApp.openSOAPModal()" class="px-2.5 py-1 rounded-lg bg-purple-950/70 hover:bg-purple-900 text-purple-300 font-semibold flex items-center gap-1 border border-purple-700/50 shadow-sm transition whitespace-nowrap">
+          <span>📝</span> Осмотр SOAP (КМИС)
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Offline Indicator Banner (shown dynamically when offline) -->
+  <div id="offline-indicator" class="hidden items-center justify-center gap-2 bg-amber-900/90 text-amber-200 text-xs py-1.5 px-4 text-center font-medium border-b border-amber-700/60 z-10">
+    <span>🔌</span>
+    <span>Вы в офлайн-режиме: Протоколы первой помощи, схемы манипуляций и метроном СЛР работают автономно без интернета.</span>
+  </div>
+
   <!-- Main Chat Area -->
-  <main id="chat-messages" class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth pb-32">
+  <main id="chat-messages" class="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 scroll-smooth pb-36">
     <div class="max-w-4xl mx-auto flex flex-col justify-end min-h-full">
       
       <!-- Welcome Card -->
-      <div id="welcome-card" class="bg-slate-900/60 border border-sky-900/50 rounded-2xl p-6 mb-6 shadow-2xl mt-auto">
+      <div id="welcome-card" class="bg-slate-900/70 border border-sky-900/50 rounded-2xl p-5 sm:p-6 mb-4 shadow-2xl mt-auto">
         <div class="flex flex-col md:flex-row gap-5 items-center md:items-start text-center md:text-left">
           <div class="w-16 h-16 bg-sky-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-sky-600/30 flex-shrink-0">
             👨‍⚕️
@@ -49,21 +104,24 @@
           <div class="flex-1">
             <h2 class="text-xl font-bold text-white mb-2">Здравствуйте! Я ваш медицинский ИИ-ассистент</h2>
             <p class="text-sm text-slate-300 leading-relaxed mb-4">
-              В мою базу заложены клинические рекомендации Всемирной организации здравоохранения (ВОЗ), протоколы Европейского совета по реанимации (ERC) и мета-анализы Cochrane Library. 
+              В базу знаний заложены клинические протоколы Всемирной организации здравоохранения (ВОЗ), Европейского совета по реанимации (ERC 2021), AHA и мета-анализы Cochrane Library.
             </p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
                 <span class="text-sky-400 font-bold block mb-1">🎙️ Голосовой ввод</span>
-                <span class="text-slate-400">Нажмите микрофон и опишите, что вас беспокоит.</span>
+                <span class="text-slate-400">Нажмите микрофон и опишите симптомы вслух.</span>
               </div>
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
                 <span class="text-emerald-400 font-bold block mb-1">🖼️ Наглядные схемы</span>
-                <span class="text-slate-400">Пошаговые иллюстрации манипуляций и первой помощи.</span>
+                <span class="text-slate-400">Пошаговые векторные иллюстрации манипуляций и метроном СЛР.</span>
               </div>
               <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 flex flex-col items-center md:items-start">
-                <span class="text-red-400 font-bold block mb-1">🚨 Триаж (Red Flags)</span>
-                <span class="text-slate-400">Мгновенное распознавание жизнеугрожающих состояний.</span>
+                <span class="text-red-400 font-bold block mb-1">🚨 Мгновенный триаж</span>
+                <span class="text-slate-400">Автоматический скрининг Red Flags и связь с 103/112.</span>
               </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center md:text-left">
+              ⚖️ <em>Информационно-клинический помощник для экстренной доврачебной самопомощи. Не заменяет очного осмотра врача.</em>
             </div>
           </div>
         </div>
@@ -73,16 +131,16 @@
   </main>
 
   <!-- Bottom Input Dock (Fixed) -->
-  <div class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 p-3 pb-safe z-20">
+  <div class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 p-2 sm:p-3 pb-safe z-20">
     <div class="max-w-4xl mx-auto">
       
       <!-- Quick Requests -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide text-[11px] whitespace-nowrap">
+      <div class="flex items-center gap-2 overflow-x-auto pb-2.5 mb-1 scrollbar-hide text-[11px] whitespace-nowrap">
         <button onclick="medicalApp.sendMessage('Человек без сознания, не дышит. Что делать?')" class="px-3 py-1.5 rounded-lg bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-700/50 transition">
           🚨 Нет дыхания (СЛР)
         </button>
         <button onclick="medicalApp.sendMessage('У человека асимметрия лица и невнятная речь')" class="px-3 py-1.5 rounded-lg bg-orange-900/50 hover:bg-orange-800 text-orange-200 border border-orange-700/50 transition">
-          🧠 Инсульт
+          🧠 Инсульт (FAST)
         </button>
         <button onclick="medicalApp.sendMessage('Сильное артериальное кровотечение из руки')" class="px-3 py-1.5 rounded-lg bg-rose-900/50 hover:bg-rose-800 text-rose-200 border border-rose-700/50 transition">
           🩸 Кровотечение
@@ -117,9 +175,9 @@
         </div>
       </div>
 
-      <div class="flex items-end gap-2 bg-slate-950/50 rounded-2xl p-1.5 border border-slate-800 focus-within:border-sky-700 transition-colors">
+      <div class="flex items-end gap-2 bg-slate-950/60 rounded-2xl p-1.5 border border-slate-800 focus-within:border-sky-700 transition-colors">
         
-        <!-- Big Glowing Microphone Button -->
+        <!-- Microphone Button -->
         <button id="mic-btn" title="Голосовой ввод" class="w-12 h-12 flex-shrink-0 rounded-xl bg-slate-800 hover:bg-sky-600 text-sky-400 hover:text-white flex items-center justify-center text-xl transition-all shadow-md">
           🎙️
         </button>
@@ -129,7 +187,7 @@
           <textarea 
             id="user-input" 
             rows="1" 
-            placeholder="Опишите симптомы..." 
+            placeholder="Опишите симптомы или жалобы..." 
             class="w-full bg-transparent py-3 px-2 text-[15px] text-slate-100 placeholder-slate-500 focus:outline-none resize-none max-h-32"
           ></textarea>
         </div>
@@ -144,13 +202,694 @@
   </div>
 
   <!-- Interactive Procedure Detail Modal -->
-  <div id="procedure-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="procedure-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
     <div id="procedure-modal-content" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90dvh] overflow-y-auto shadow-2xl relative">
       <!-- Dynamically filled by proceduresManager -->
     </div>
   </div>
 
-  <!-- CSS support for safe area on mobile -->
+  <!-- Emergency Summary Handoff Modal (for 103 / 112) -->
+  <div id="summary-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90dvh] flex flex-col shadow-2xl">
+      <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">📋</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Сводка для бригады скорой помощи</h3>
+            <p class="text-xs text-slate-400">Готовый клинический протокол для передачи врачам 103 / 112</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeSummaryModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+      
+      <div class="p-4 sm:p-5 flex-1 overflow-y-auto">
+        <textarea id="summary-text-content" readonly class="w-full h-64 bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 leading-relaxed focus:outline-none resize-none"></textarea>
+      </div>
+
+      <div class="p-4 sm:p-5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <button onclick="medicalApp.copySummaryToClipboard()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+            📋 Скопировать
+          </button>
+          <button onclick="medicalApp.shareSummary()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+            📤 Поделиться
+          </button>
+          <button onclick="medicalApp.printSummary()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
+            🖨️ Печать / PDF
+          </button>
+        </div>
+        <button onclick="medicalApp.closeSummaryModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (⚙️) -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full max-h-[90dvh] flex flex-col shadow-2xl">
+      <div class="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">⚙️</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Параметры ИИ-модели</h3>
+            <p class="text-xs text-slate-400">Выбор провайдера нейросети и ключей доступа</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeSettingsModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+        
+        <!-- Backend Status Banner -->
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <div id="setting-backend-status"></div>
+        </div>
+
+        <!-- Provider Select -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Провайдер нейросети</label>
+          <select id="setting-provider" onchange="medicalApp.updateProviderSpecificFields()" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-sky-500">
+            <option value="pollinations">Pollinations AI (Бесплатно, без API-ключа, CORS)</option>
+            <option value="groq">Groq (Сверхбыстрый Llama 3.3, нужен ключ Groq)</option>
+            <option value="openrouter">OpenRouter (Claude 3.5, GPT-4o, DeepSeek R1)</option>
+            <option value="ollama">Локальный Ollama (http://localhost:11434)</option>
+            <option value="backend">FastAPI Backend Прокси (Запуск python run.py)</option>
+            <option value="custom">Custom OpenAI-compatible API</option>
+          </select>
+        </div>
+
+        <!-- API Key -->
+        <div id="setting-key-container" class="hidden">
+          <label class="block text-slate-300 font-bold mb-1">API-ключ (сохраняется только в вашем браузере)</label>
+          <input type="password" id="setting-api-key" placeholder="gsk_... / sk-or-... / sk-..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-sky-500 font-mono">
+        </div>
+
+        <!-- Base URL -->
+        <div id="setting-base-container" class="hidden">
+          <label class="block text-slate-300 font-bold mb-1">Base URL эндпоинта</label>
+          <input type="text" id="setting-base-url" placeholder="http://localhost:11434/v1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-sky-500 font-mono">
+        </div>
+
+        <!-- Model Name -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Название модели</label>
+          <input type="text" id="setting-model" placeholder="openai / llama-3.3-70b-versatile / deepseek/deepseek-r1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-sky-500 font-mono">
+        </div>
+
+        <!-- Temperature -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-slate-300 font-bold">Температура (Клиническая строгость)</label>
+            <span id="setting-temp-val" class="font-mono text-sky-400 font-bold">0.3</span>
+          </div>
+          <input type="range" id="setting-temp" min="0.0" max="1.0" step="0.05" value="0.3" oninput="document.getElementById('setting-temp-val').innerText = this.value" class="w-full">
+          <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+            <span>0.0 (Максимальная точность EBM)</span>
+            <span>1.0 (Творческий)</span>
+          </div>
+        </div>
+
+        <!-- Test Connection -->
+        <div class="pt-2 border-t border-slate-800">
+          <button id="test-conn-btn" onclick="medicalApp.testSettingsConnection()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded-xl font-semibold border border-slate-700 transition flex items-center gap-1.5">
+            ⚡ Проверить подключение
+          </button>
+          <div id="test-conn-result"></div>
+        </div>
+
+      </div>
+
+      <div class="p-4 sm:p-5 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="medicalApp.closeSettingsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Отмена
+        </button>
+        <button onclick="medicalApp.saveSettings()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-xl transition shadow">
+          Сохранить настройки
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calculators Modal (🧮) -->
+  <div id="calculators-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[92dvh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧮</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Клинические калькуляторы (EBM)</h3>
+            <p class="text-xs text-slate-400">Строгий детерминированный расчет без галлюцинаций нейросети</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeCalculatorsModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <!-- Calc Tabs -->
+      <div class="p-3 bg-slate-950 border-b border-slate-800 flex items-center gap-2 overflow-x-auto scrollbar-hide text-xs">
+        <button id="tab-btn-ckd" onclick="medicalApp.switchCalcTab('ckd')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white shadow whitespace-nowrap">
+          СКФ (CKD-EPI 2021)
+        </button>
+        <button id="tab-btn-curb" onclick="medicalApp.switchCalcTab('curb')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
+          Пневмония (CURB-65)
+        </button>
+        <button id="tab-btn-cha" onclick="medicalApp.switchCalcTab('cha')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
+          ФП / Инсульт (CHA₂DS₂-VASc)
+        </button>
+        <button id="tab-btn-gcs" onclick="medicalApp.switchCalcTab('gcs')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">
+          Кома Глазго (GCS)
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 text-xs space-y-4">
+        
+        <!-- PANE: CKD-EPI 2021 -->
+        <div id="calc-pane-ckd" class="space-y-3">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+            <h4 class="font-bold text-sky-400 text-sm mb-1">Расчет скорости клубочковой фильтрации (CKD-EPI 2021 race-free)</h4>
+            <p class="text-slate-400 text-[11px]">Золотой стандарт оценки функции почек (KDIGO 2021/2024). Необходим для коррекции доз антибиотиков, НОАК и оценки риска контраст-индуцированной нефропатии перед КТ.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Пол пациента</label>
+              <select id="calc-ckd-gender" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+                <option value="male">Мужской</option>
+                <option value="female">Женский</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Возраст (лет)</label>
+              <input type="number" id="calc-ckd-age" value="55" min="18" max="110" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Креатинин сыворотки (мкмоль/л)</label>
+              <input type="number" id="calc-ckd-cr" value="85" step="0.1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono">
+            </div>
+          </div>
+          <button onclick="medicalApp.calculateCKD()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shadow transition">
+            🧮 Рассчитать СКФ
+          </button>
+          <div id="calc-ckd-result"></div>
+        </div>
+
+        <!-- PANE: CURB-65 -->
+        <div id="calc-pane-curb" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+            <h4 class="font-bold text-sky-400 text-sm mb-1">Шкала тяжести внебольничной пневмонии CURB-65 (BTS Guidelines)</h4>
+            <p class="text-slate-400 text-[11px]">Определяет маршрутизацию пациента: амбулаторное лечение, общетерапевтическое отделение или ОРИТ.</p>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="curb-c" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>C (Confusion)</strong> — Остро возникшее нарушение сознания / дезориентация</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="curb-u" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>U (Urea)</strong> — Мочевина крови &gt; 7 ммоль/л (Азот мочевины &gt; 19 мг/дл)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="curb-r" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>R (Respiratory rate)</strong> — Частота дыхательных движений (ЧДД) &ge; 30 в мин</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="curb-b" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>B (Blood pressure)</strong> — Гипотензия: САД &lt; 90 мм рт. ст. ИЛИ ДАД &le; 60 мм рт. ст.</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="curb-65" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>65</strong> — Возраст пациента &ge; 65 лет</span>
+            </label>
+          </div>
+          <button onclick="medicalApp.calculateCURB()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shadow transition">
+            🧮 Оценить риск пневмонии
+          </button>
+          <div id="calc-curb-result"></div>
+        </div>
+
+        <!-- PANE: CHA2DS2-VASc -->
+        <div id="calc-pane-cha" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+            <h4 class="font-bold text-sky-400 text-sm mb-1">Шкала риска инсульта и тромбоэмболии при фибрилляции предсердий (CHA₂DS₂-VASc 2024)</h4>
+            <p class="text-slate-400 text-[11px]">Клинические рекомендации ESC 2024: определяет необходимость назначения оральных антикоагулянтов (ПОАК: Апиксабан, Ривароксабан, Дабигатран).</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-chf" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>C</strong> — Хроническая сердечная недостаточность / ФВ &le; 40% (+1)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-htn" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>H</strong> — Артериальная гипертензия в анамнезе (+1)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-age75" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>A₂</strong> — Возраст &ge; 75 лет (+2 балла)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-dm" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>D</strong> — Сахарный диабет (+1)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-stroke" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>S₂</strong> — Инсульт / ТИА / тромбоэмболия в анамнезе (+2 балла)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-vasc" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>V</strong> — Сосудистое заболевание (перенесенный ИМ, БПА, атеросклероз аорты) (+1)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-age65" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>A</strong> — Возраст 65–74 года (+1)</span>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:bg-slate-800/50 cursor-pointer">
+              <input type="checkbox" id="cha-female" class="w-4 h-4 rounded text-sky-600">
+              <span><strong>Sc</strong> — Женский пол (+1)</span>
+            </label>
+          </div>
+          <button onclick="medicalApp.calculateCHA()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shadow transition">
+            🧮 Оценить риск тромбоэмболии
+          </button>
+          <div id="calc-cha-result"></div>
+        </div>
+
+        <!-- PANE: GCS -->
+        <div id="calc-pane-gcs" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+            <h4 class="font-bold text-sky-400 text-sm mb-1">Шкала комы Глазго (Glasgow Coma Scale, GCS)</h4>
+            <p class="text-slate-400 text-[11px]">Оценка уровня сознания у пациентов при ОНМК, ЧМТ, комах и интоксикациях. При GCS &le; 8 — показание к интубации трахеи и переводу на ИВЛ!</p>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Открывание глаз (E, Eye opening)</label>
+              <select id="gcs-eye" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+                <option value="4">4 — Спонтанное (4 балла)</option>
+                <option value="3">3 — На словесный оклик (3 балла)</option>
+                <option value="2">2 — На болевое раздражение (2 балла)</option>
+                <option value="1">1 — Отсутствует (1 балл)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Речевая реакция (V, Verbal response)</label>
+              <select id="gcs-verbal" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+                <option value="5">5 — Полностью ориентирован, поддерживает диалог (5 баллов)</option>
+                <option value="4">4 — Спутанная речь, дезориентирован (4 балла)</option>
+                <option value="3">3 — Неадекватные слова / бессвязные фразы (3 балла)</option>
+                <option value="2">2 — Нечленораздельные звуки / стоны (2 балла)</option>
+                <option value="1">1 — Реакция отсутствует (1 балл)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 font-bold mb-1">Двигательная реакция (M, Motor response)</label>
+              <select id="gcs-motor" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+                <option value="6">6 — Выполняет устные инструкции (6 баллов)</option>
+                <option value="5">5 — Локализует болевое раздражение (5 баллов)</option>
+                <option value="4">4 — Отдергивает конечность на боль (4 балла)</option>
+                <option value="3">3 — Патологическое сгибание (декортикационная ригидность) (3 балла)</option>
+                <option value="2">2 — Патологическое разгибание (децеребрационная ригидность) (2 балла)</option>
+                <option value="1">1 — Мышечная атония / движения отсутствуют (1 балл)</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="medicalApp.calculateGCS()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold shadow transition">
+            🧮 Оценить уровень сознания (GCS)
+          </button>
+          <div id="calc-gcs-result"></div>
+        </div>
+
+      </div>
+
+      <div class="p-4 border-t border-slate-800 flex justify-end">
+        <button onclick="medicalApp.closeCalculatorsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Labs Evaluator Modal (🧪) -->
+  <div id="labs-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[92dvh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧪</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Лабораторный интерпретатор дежуранта</h3>
+            <p class="text-xs text-slate-400">Скрининг острых синдромов (ОКС, ТЭЛА, сепсис, панкреатит, гипергликемия)</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeLabsModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 text-xs space-y-4">
+        <p class="text-slate-300 text-[11px] leading-relaxed">
+          Введите любые доступные показатели из экстренной лаборатории (Cito!). Система выявит опасные отклонения и сформирует синдромальное заключение.
+        </p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Лейкоциты (WBC, 10⁹/л)</label>
+            <input type="number" id="lab-wbc" placeholder="Норма: 4.0 - 9.0" step="0.1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Палочкоядерные (%)</label>
+            <input type="number" id="lab-band" placeholder="Норма: 1 - 6" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">СРБ (мг/л)</label>
+            <input type="number" id="lab-crp" placeholder="Норма: &lt; 5.0" step="0.1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Амилаза крови (Ед/л)</label>
+            <input type="number" id="lab-amylase" placeholder="Норма: 28 - 100" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Тропонин I/T (нг/мл)</label>
+            <input type="number" id="lab-troponin" placeholder="Норма: &lt; 0.04" step="0.01" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">D-димер (мкг/мл FEU)</label>
+            <input type="number" id="lab-ddimer" placeholder="Норма: &lt; 0.5" step="0.05" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Глюкоза крови (ммоль/л)</label>
+            <input type="number" id="lab-glucose" placeholder="Норма: 3.9 - 6.1" step="0.1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Калий (К+, ммоль/л)</label>
+            <input type="number" id="lab-potassium" placeholder="Норма: 3.5 - 5.1" step="0.1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Креатинин (мкмоль/л)</label>
+            <input type="number" id="lab-creatinine" placeholder="Норма: 62 - 115" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Гемоглобин (г/л)</label>
+            <input type="number" id="lab-hb" placeholder="Норма: 120 - 160" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white font-mono">
+          </div>
+        </div>
+
+        <button onclick="medicalApp.evaluateLabsFromModal()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+          <span>🧪</span> Проанализировать анализы
+        </button>
+
+        <div id="lab-eval-result"></div>
+      </div>
+
+      <div class="p-4 border-t border-slate-800 flex justify-end">
+        <button onclick="medicalApp.closeLabsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drugs & DDI Modal (💊) -->
+  <div id="drugs-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[92dvh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">💊</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Экстренная фармакотерапия & DDI</h3>
+            <p class="text-xs text-slate-400">Дозировки дежурного шкафа и проверка опасных лекарственных взаимодействий</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeDrugsModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <!-- Drug Tabs -->
+      <div class="p-3 bg-slate-950 border-b border-slate-800 flex items-center gap-2 text-xs">
+        <button id="tab-btn-emerg-drugs" onclick="medicalApp.switchDrugTab('emergency')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white shadow">
+          ⚡ Препараты дежурного врача
+        </button>
+        <button id="tab-btn-ddi" onclick="medicalApp.switchDrugTab('ddi')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+          ⚠️ Межлекарственные взаимодействия (DDI)
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 text-xs space-y-4">
+        
+        <!-- PANE: Emergency Drugs Handbook -->
+        <div id="pane-emerg-drugs" class="space-y-3">
+          
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Эпинефрин (Адреналин) 0.1% (1 мг/мл)</strong>
+              <span class="px-2 py-0.5 rounded bg-red-900/60 text-red-300 text-[10px] font-bold">Линия #1 при анафилаксии</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 0.5 мг (0.5 мл 0.1%) В/М в переднебоковую поверхность бедра. СЛР: 1 мг В/В каждые 3–5 мин.</p>
+            <p class="text-red-400 text-[11px] font-semibold">⚠️ Вводится ДО гормонов и антигистаминных! Не вводить в ягодицу или подкожно.</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Магния сульфат 25%</strong>
+              <span class="px-2 py-0.5 rounded bg-amber-900/60 text-amber-300 text-[10px] font-bold">Криз / Судороги</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 5–10 мл (1.25–2.5 г) развести в 10–20 мл 0.9% NaCl, вводить В/В ОЧЕНЬ медленно (10–15 минут!).</p>
+            <p class="text-amber-400 text-[11px]">⚠️ Быстрое введение вызывает резкую гипотонию и апноэ. Антидот: Кальция глюконат 10% В/В.</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Каптоприл 25 мг</strong>
+              <span class="px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 text-[10px] font-bold">Неосложненный криз</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 25 мг (пожилым — 12.5 мг) под язык сублингвально. Эффект через 15–30 минут.</p>
+            <p class="text-sky-400 text-[11px]">💡 Цель: снизить АД на 20–25% за первые 1–2 часа. Не снижать до нормального резко!</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Моксонидин 0.2 мг / 0.4 мг</strong>
+              <span class="px-2 py-0.5 rounded bg-indigo-900/60 text-indigo-300 text-[10px] font-bold">Криз + Тахикардия</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 0.2 мг внутрь или под язык. Макс. разовая доза 0.4 мг.</p>
+            <p class="text-slate-400 text-[11px]">⚠️ Противопоказан при ЧСС &lt; 50 уд/мин и AV-блокадах II-III ст.</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Кеторолак (Кеторол) 30 мг/мл</strong>
+              <span class="px-2 py-0.5 rounded bg-rose-900/60 text-rose-300 text-[10px] font-bold">Колика / Травма</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 30 мг (1 мл) глубоко В/М или медленно В/В.</p>
+            <p class="text-red-400 text-[11px] font-bold">⛔ СТРОГО ЗАПРЕЩЕНО вводить при болях в животе ДО осмотра дежурным хирургом!</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Дротаверин (Но-шпа) 20 мг/мл</strong>
+              <span class="px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 text-[10px] font-bold">Спазмолитик</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 40–80 мг (2–4 мл 2% раствора) В/М или медленно В/В на физрастворе.</p>
+            <p class="text-slate-400 text-[11px]">⚠️ При быстром В/В введении возможен коллапс и AV-блокада.</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">Дексаметазон 4 мг/мл</strong>
+              <span class="px-2 py-0.5 rounded bg-purple-900/60 text-purple-300 text-[10px] font-bold">Отек Квинке / Бронхоспазм</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> 8–16 мг (2–4 ампулы) В/В болюсно или В/М. При астматическом статусе — до 20 мг.</p>
+            <p class="text-purple-300 text-[11px]">💡 При анафилаксии вводится на 2-м этапе (гормоны начинают действовать через 20–40 мин).</p>
+          </div>
+
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div class="flex items-center justify-between mb-1">
+              <strong class="text-sky-300 text-sm">ДАТТ: Аспирин 300 мг + Клопидогрел 300 мг</strong>
+              <span class="px-2 py-0.5 rounded bg-red-900/60 text-red-300 text-[10px] font-bold">ОКС / Инфаркт</span>
+            </div>
+            <p class="text-slate-200 mb-1"><strong>Дозировка:</strong> Аспирин 250–300 мг разжевать + Клопидогрел 300 мг (или Тикагрелор 180 мг) внутрь однократно.</p>
+            <p class="text-amber-400 text-[11px]">⚠️ Аспирин обязательно разжевать! Исключить активное ЖКТ-кровотечение.</p>
+          </div>
+
+        </div>
+
+        <!-- PANE: DDI Checker -->
+        <div id="pane-ddi" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl">
+            <h4 class="font-bold text-amber-400 text-sm mb-1">Проверка межлекарственных взаимодействий (DDI)</h4>
+            <p class="text-slate-400 text-[11px]">Автоматический поиск опасных комбинаций: фатальная гипотензия, гиперкалиемия, тяжелые кровотечения и рабдомиолиз.</p>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Список препаратов пациента (через запятую):</label>
+            <input type="text" id="ddi-input" placeholder="Например: Каптоприл, Верошпирон" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono">
+          </div>
+
+          <div class="flex flex-wrap gap-1.5 text-[11px]">
+            <span class="text-slate-500 self-center">Примеры:</span>
+            <button onclick="document.getElementById('ddi-input').value = 'Каптоприл, Верошпирон'; medicalApp.checkDDIFromModal();" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Каптоприл + Спиронолактон</button>
+            <button onclick="document.getElementById('ddi-input').value = 'Кеторолак, Ксарелто'; medicalApp.checkDDIFromModal();" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Кеторолак + Ривароксабан</button>
+            <button onclick="document.getElementById('ddi-input').value = 'Нитроглицерин, Силденафил'; medicalApp.checkDDIFromModal();" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Нитраты + Силденафил</button>
+            <button onclick="document.getElementById('ddi-input').value = 'Бисопролол, Верапамил'; medicalApp.checkDDIFromModal();" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Бета-блокатор + Верапамил</button>
+            <button onclick="document.getElementById('ddi-input').value = 'Кларитромицин, Аторвастатин'; medicalApp.checkDDIFromModal();" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">Макролид + Статин</button>
+          </div>
+
+          <button onclick="medicalApp.checkDDIFromModal()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+            <span>⚠️</span> Проверить комбинацию на совместимость
+          </button>
+
+          <div id="ddi-result"></div>
+        </div>
+
+      </div>
+
+      <div class="p-4 border-t border-slate-800 flex justify-end">
+        <button onclick="medicalApp.closeDrugsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOAP Clinical Note Generator Modal (📝) -->
+  <div id="soap-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[92dvh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">📝</span>
+          <div>
+            <h3 class="text-base font-bold text-white">Генератор первичного осмотра (SOAP / КМИС / Дамумед)</h3>
+            <p class="text-xs text-slate-400">Формирование официального юридически выверенного дневника дежурного врача</p>
+          </div>
+        </div>
+        <button onclick="medicalApp.closeSOAPModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 overflow-y-auto flex-1 text-xs space-y-4">
+        
+        <!-- Patient Base -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Возраст пациента</label>
+            <input type="number" id="soap-age" placeholder="лет (например, 58)" value="58" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Пол</label>
+            <select id="soap-gender" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+              <option value="мужской">Мужской</option>
+              <option value="женский">Женский</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- S (Subjective) -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Жалобы при поступлении (S — Subjective)</label>
+          <textarea id="soap-complaints" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500" placeholder="На интенсивную давящую боль за грудиной с иррадиацией в левое плечо, чувство нехватки воздуха, слабость..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Анамнез заболевания и жизни</label>
+          <textarea id="soap-anamnesis" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-purple-500" placeholder="Ухудшение около 2 часов назад после психоэмоционального напряжения. Ранее отмечает подъемы АД до 170/100 мм рт. ст. Препараты регулярно не принимает. Аллергоанамнез не отягощен."></textarea>
+        </div>
+
+        <!-- O (Objective - Vitals) -->
+        <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+          <span class="font-bold text-sky-400 block mb-1">Объективный статус (O — Objective):</span>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400">АД (мм рт. ст.)</label>
+              <input type="text" id="soap-bp" value="160/95" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400">Пульс / ЧСС (уд/мин)</label>
+              <input type="text" id="soap-pulse" value="88" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400">SpO₂ (%)</label>
+              <input type="text" id="soap-spo2" value="97" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400">ЧДД (в мин)</label>
+              <input type="text" id="soap-rr" value="18" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono text-xs">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            <div>
+              <label class="block text-[10px] text-slate-400">Аускультация легких</label>
+              <input type="text" id="soap-lungs" value="Везикулярное, хрипов нет" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400">Пальпация живота</label>
+              <input type="text" id="soap-abdomen" value="Мягкий, безболезненный во всех отделах, перитонеальных знаков нет" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white text-xs">
+            </div>
+          </div>
+        </div>
+
+        <!-- A (Assessment - Diagnosis) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="sm:col-span-2">
+            <label class="block text-slate-300 font-bold mb-1">Предварительный диагноз (A — Assessment)</label>
+            <input type="text" id="soap-diag-name" value="ИБС. Острый коронарный синдром без подъема сегмента ST. Гипертоническая болезнь III ст." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Код МКБ-10</label>
+            <select id="soap-diag-code" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono">
+              <option value="I20.0">I20.0 — Нестабильная стенокардия</option>
+              <option value="I21.9">I21.9 — Острый инфаркт миокарда</option>
+              <option value="I10">I10 — Эссенциальная гипертензия</option>
+              <option value="I11.9">I11.9 — Гипертонический криз</option>
+              <option value="I63.9">I63.9 — Ишемический инсульт</option>
+              <option value="I48">I48 — Фибрилляция предсердий</option>
+              <option value="I26.9">I26.9 — ТЭЛА</option>
+              <option value="J18.9">J18.9 — Внебольничная пневмония</option>
+              <option value="J44.1">J44.1 — ХОБЛ с обострением</option>
+              <option value="K25.9">K25.9 — Язва желудка / ЖКК</option>
+              <option value="K35.8">K35.8 — Острый аппендицит</option>
+              <option value="K85.9">K85.9 — Острый панкреатит</option>
+              <option value="N23">N23 — Почечная колика</option>
+              <option value="T78.2">T78.2 — Анафилактический шок</option>
+              <option value="T78.3">T78.3 — Отек Квинке</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- P (Plan) -->
+        <div class="space-y-2">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">План экстренной диагностики (P — Plan)</label>
+            <input type="text" id="soap-plan-diag" value="ЭКГ в 12 отведениях в динамике, ОАК, биохимия (тропонин I/T cito, креатинин, глюкоза), коагулограмма." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Неотложная терапия в приемном отделении</label>
+            <input type="text" id="soap-plan-med" value="Аспирин 300 мг разжевать + Клопидогрел 300 мг перорально. Каптоприл 25 мг сублингвально при сохранении АД &gt; 160." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Маршрутизация / Решение</label>
+            <input type="text" id="soap-routing" value="Экстренная госпитализация в отделение кардиореанимации (ОРИТ) / Палату интенсивной терапии." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-white">
+          </div>
+        </div>
+
+        <button onclick="medicalApp.generateSOAPFromModal()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold shadow transition flex items-center justify-center gap-2">
+          <span>📋</span> Сформировать протокол осмотра
+        </button>
+
+        <!-- Preview & Copy Area -->
+        <div id="soap-preview-block" class="hidden space-y-2 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white">Готовый текст протокола:</span>
+            <button onclick="medicalApp.copySOAPToClipboard()" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-bold flex items-center gap-1 shadow">
+              📋 Скопировать в буфер
+            </button>
+          </div>
+          <textarea id="soap-output-text" readonly class="w-full h-56 bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 leading-relaxed focus:outline-none resize-none"></textarea>
+        </div>
+
+      </div>
+
+      <div class="p-4 border-t border-slate-800 flex justify-end">
+        <button onclick="medicalApp.closeSOAPModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Safe Area Styles -->
   <style>
     .pb-safe {
       padding-bottom: env(safe-area-inset-bottom, 12px);
@@ -161,10 +900,11 @@
   </style>
 
   <!-- Application Scripts -->
-  <script src="/js/metronome.js"></script>
-  <script src="/js/speech.js"></script>
-  <script src="/js/tts.js"></script>
-  <script src="/js/procedures.js"></script>
-  <script src="/js/app.js"></script>
+  <script src="./js/metronome.js"></script>
+  <script src="./js/speech.js"></script>
+  <script src="./js/tts.js"></script>
+  <script src="./js/procedures.js"></script>
+  <script src="./js/medical_skills.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>

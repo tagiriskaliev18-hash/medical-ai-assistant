@@ -12,9 +12,9 @@ class ClinicalEngine {
     if (this.loaded) return;
     try {
       const [rfRes, pRes, procRes] = await Promise.all([
-        fetch('/assets/data/red_flags.json'),
-        fetch('/assets/data/clinical_protocols.json'),
-        fetch('/assets/data/procedures.json')
+        fetch('./assets/data/red_flags.json'),
+        fetch('./assets/data/clinical_protocols.json'),
+        fetch('./assets/data/procedures.json')
       ]);
       
       const rfData = await rfRes.json();
@@ -28,6 +28,9 @@ class ClinicalEngine {
       this.procedures.forEach(p => this.proceduresMap[p.id] = p);
       
       this.loaded = true;
+      if (window.proceduresManager && typeof window.proceduresManager.syncFromEngine === 'function') {
+        window.proceduresManager.syncFromEngine(this.proceduresMap);
+      }
       console.log('Клиническая база успешно загружена.');
     } catch (e) {
       console.error('Ошибка загрузки клинической базы', e);

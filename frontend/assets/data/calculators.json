@@ -1,0 +1,77 @@
+{
+  "calculators": [
+    {
+      "id": "ckd_epi",
+      "name": "Скорость клубочковой фильтрации (СКФ CKD-EPI 2021)",
+      "badge": "Нефрология / Терапия",
+      "summary": "Оценка функции почек без поправки на расу (рекомендации KDIGO 2021/2024). Критично для подбора дозировок медикаментов и исключения ОПП/ХБП.",
+      "guideline": "KDIGO Clinical Practice Guideline / Inker LA et al. NEJM 2021",
+      "inputs": [
+        {"id": "gender", "label": "Пол", "type": "select", "options": [{"value": "female", "label": "Женский"}, {"value": "male", "label": "Мужской"}]},
+        {"id": "age", "label": "Возраст (лет)", "type": "number", "min": 18, "max": 110, "default": 55},
+        {"id": "creatinine", "label": "Креатинин сыворотки (мкмоль/л)", "type": "number", "min": 20, "max": 1500, "default": 85}
+      ]
+    },
+    {
+      "id": "curb_65",
+      "name": "Шкала CURB-65 (Тяжесть внебольничной пневмонии)",
+      "badge": "Пульмонология / Приемный покой",
+      "summary": "Оценка риска неблагоприятного исхода и определение маршрутизации: амбулаторно, терапевтическое отделение или ОРИТ.",
+      "guideline": "British Thoracic Society (BTS) / Клинические рекомендации МЗ РФ/РК по пневмонии",
+      "inputs": [
+        {"id": "confusion", "label": "C (Confusion) — Нарушение сознания / дезориентация", "type": "checkbox", "points": 1},
+        {"id": "urea", "label": "U (Urea) — Мочевина крови > 7.0 ммоль/л (или азот мочевины > 19 мг/дл)", "type": "checkbox", "points": 1},
+        {"id": "rr", "label": "R (Respiratory rate) — Частота дыхания (ЧДД) ≥ 30 в минуту", "type": "checkbox", "points": 1},
+        {"id": "bp", "label": "B (Blood pressure) — АД систолическое < 90 или диастолическое ≤ 60 мм рт.ст.", "type": "checkbox", "points": 1},
+        {"id": "age65", "label": "65 — Возраст пациента ≥ 65 лет", "type": "checkbox", "points": 1}
+      ]
+    },
+    {
+      "id": "cha2ds2_vasc",
+      "name": "Шкала CHA2DS2-VASc (Риск инсульта при фибрилляции предсердий)",
+      "badge": "Кардиология",
+      "summary": "Определение показаний к назначению прямых оральных антикоагулянтов (ПОАК) при неклапанной фибрилляции предсердий.",
+      "guideline": "ESC Guidelines for the management of atrial fibrillation 2020/2024",
+      "inputs": [
+        {"id": "chf", "label": "C — Хроническая сердечная недостаточность / дисфункция ЛЖ (ФВ ≤ 40%)", "type": "checkbox", "points": 1},
+        {"id": "htn", "label": "H — Артериальная гипертензия (в т.ч. медикаментозно контролируемая)", "type": "checkbox", "points": 1},
+        {"id": "age75", "label": "A2 — Возраст ≥ 75 лет", "type": "checkbox", "points": 2},
+        {"id": "dm", "label": "D — Сахарный диабет", "type": "checkbox", "points": 1},
+        {"id": "stroke", "label": "S2 — Инсульт / ТИА / тромбоэмболия в анамнезе", "type": "checkbox", "points": 2},
+        {"id": "vasc", "label": "V — Сосудистое заболевание (инфаркт миокарда, атеросклероз артерий нижних конечностей)", "type": "checkbox", "points": 1},
+        {"id": "age65_74", "label": "A — Возраст 65–74 года (не отмечать, если уже отмечено ≥75)", "type": "checkbox", "points": 1},
+        {"id": "female", "label": "Sc — Женский пол", "type": "checkbox", "points": 1}
+      ]
+    },
+    {
+      "id": "gcs",
+      "name": "Шкала комы Глазго (GCS — Glasgow Coma Scale)",
+      "badge": "Неврология / Реаниматология",
+      "summary": "Объективная оценка уровня угнетения сознания при ЧМТ, инсультах, отравлениях и комах.",
+      "guideline": "Teasdale G, Jennett B. Lancet 1974 / ERC Guidelines 2021",
+      "inputs": [
+        {"id": "eye", "label": "Открывание глаз", "type": "select", "options": [
+          {"value": 4, "label": "4 — Спонтанное"},
+          {"value": 3, "label": "3 — На звук/обращенную речь"},
+          {"value": 2, "label": "2 — На болевой раздражитель"},
+          {"value": 1, "label": "1 — Отсутствует"}
+        ]},
+        {"id": "verbal", "label": "Речевая реакция", "type": "select", "options": [
+          {"value": 5, "label": "5 — Ориентированная, связная речь"},
+          {"value": 4, "label": "4 — Спутанная речь (дезориентирован)"},
+          {"value": 3, "label": "3 — Непонятные/неподходящие слова"},
+          {"value": 2, "label": "2 — Нечленораздельные звуки/стоны"},
+          {"value": 1, "label": "1 — Отсутствует"}
+        ]},
+        {"id": "motor", "label": "Двигательная реакция", "type": "select", "options": [
+          {"value": 6, "label": "6 — Выполняет команды"},
+          {"value": 5, "label": "5 — Локализует болевое раздражение"},
+          {"value": 4, "label": "4 — Отдергивает конечность при боли"},
+          {"value": 3, "label": "3 — Патологическое сгибание (декортикация)"},
+          {"value": 2, "label": "2 — Патологическое разгибание (децеребрация)"},
+          {"value": 1, "label": "1 — Отсутствует"}
+        ]}
+      ]
+    }
+  ]
+}
