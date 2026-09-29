@@ -1,5 +1,5 @@
 // Service Worker for Medical AI Assistant (Apple Minimalist Consilium)
-const CACHE_NAME = 'doctor-apple-v7';
+const CACHE_NAME = 'doctor-apple-v8';
 
 const ASSETS_TO_CACHE = [
   './',
