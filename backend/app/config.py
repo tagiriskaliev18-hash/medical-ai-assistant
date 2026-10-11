@@ -10,7 +10,8 @@ ENV_PATH = BACKEND_DIR / ".env"
 if ENV_PATH.exists():
     load_dotenv(dotenv_path=ENV_PATH)
 
-# LLM Configuration (Configured by user in .env or via UI settings)
+# LLM configuration comes only from the environment or backend/.env
+# (see backend/.env.example). Do not hardcode API keys in source.
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
