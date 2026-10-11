@@ -41,6 +41,19 @@ SYSTEM_PROMPT = """Вы — специализированный клиниче�
    - [PROCEDURE:recovery_position] (Боковое положение)
    - [PROCEDURE:blood_pressure] (Давление)
    - [PROCEDURE:pulse] (Пульс)
+
+ОБЯЗАТЕЛЬНО завершай каждый ответ дословным блоком:
+### Medical disclaimer / Медицинский дисклеймер
+**EN:** This assistant is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified clinician. In an emergency, call emergency services immediately.
+**RU:** Этот ассистент не заменяет профессиональную медицинскую консультацию, диагноз или лечение. Решение принимает врач. При угрозе жизни немедленно вызывайте экстренные службы (103 / 112 или местный номер).
+"""
+
+MEDICAL_DISCLAIMER_HEADING = "### Medical disclaimer / Медицинский дисклеймер"
+MEDICAL_DISCLAIMER = """### Medical disclaimer / Медицинский дисклеймер
+
+**EN:** This assistant is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified clinician. In an emergency, call emergency services immediately.
+
+**RU:** Этот ассистент не заменяет профессиональную медицинскую консультацию, диагноз или лечение. Решение принимает врач. При угрозе жизни немедленно вызывайте экстренные службы (103 / 112 или местный номер).
 """
 
 class LLMService:
@@ -99,6 +112,7 @@ class LLMService:
                 "stream": True
             }
 
+            collected = []
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     async with client.stream("POST", endpoint_url, headers=headers, json=payload) as response:
@@ -116,6 +130,7 @@ class LLMService:
                                         delta = chunk.get("choices", [{}])[0].get("delta", {})
                                         content = delta.get("content", "")
                                         if content:
+                                            collected.append(content)
                                             yield content
                                     except Exception:
                                         continue
@@ -123,6 +138,9 @@ class LLMService:
                             print(f"Primary LLM API returned status {response.status_code}")
             except Exception as e:
                 print(f"Primary LLM connection error: {e}")
+
+            if stream_success and MEDICAL_DISCLAIMER_HEADING not in "".join(collected):
+                yield "\n\n" + MEDICAL_DISCLAIMER
 
         # 4. Fallback to EBM Clinical Expert Engine if external LLM failed or no key
         if not stream_success:
@@ -189,7 +207,7 @@ class LLMService:
             f"### ⛔ 4. КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО\n" + "".join([f"- ❌ {c}\n" for c in contra]) + "\n",
             f"### 🖼️ 5. РЕКОМЕНДУЕМЫЕ МАНИПУЛЯЦИИ\n{proc_tag if proc_tag else 'Особых хирургических или экстренных процедур первой помощи на данном этапе не требуется.'}\n",
             f"### 👨‍⚕️ 6. К КАКОМУ ВРАЧУ И АНАЛИЗЫ\n- **Специалист:** Врач общей практики / терапевт (при ухудшении — бригада скорой помощи 103).\n- **Базовый скрининг:** Общий анализ крови (ОАК), общий анализ мочи, ЭКГ в 12 отведениях.\n\n",
-            f"### ⚖️ 7. МЕДИЦИНСКИЙ ДИСКЛЕЙМЕР\n*Данный клинический разбор сформирован на основе международных стандартов доказательной медицины (EBM). Он предназначен исключительно для информационной ориентации и не заменяет очного медицинского осмотра сертифицированным специалистом. При признаках угрозы жизни немедленно звоните 103 или 112.*\n"
+            f"{MEDICAL_DISCLAIMER}\n"
         ]
 
         for chunk in response_chunks:

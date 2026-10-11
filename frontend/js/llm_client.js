@@ -70,6 +70,20 @@ const MULTI_LLM_MODELS = {
   }
 };
 
+const MEDICAL_DISCLAIMER_HEADING = '### Medical disclaimer / Медицинский дисклеймер';
+const MEDICAL_DISCLAIMER = `${MEDICAL_DISCLAIMER_HEADING}
+
+**EN:** This assistant is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified clinician. In an emergency, call emergency services immediately.
+
+**RU:** Этот ассистент не заменяет профессиональную медицинскую консультацию, диагноз или лечение. Решение принимает врач. При угрозе жизни немедленно вызывайте экстренные службы (103 / 112 или местный номер).`;
+
+function withMedicalDisclaimer(text) {
+  const body = text || '';
+  if (body.includes(MEDICAL_DISCLAIMER_HEADING)) return body;
+  const trimmed = body.replace(/\s+$/, '');
+  return trimmed ? `${trimmed}\n\n${MEDICAL_DISCLAIMER}` : MEDICAL_DISCLAIMER;
+}
+
 class LLMClient {
   constructor() {
     this.storageKey = 'doctor_llm_config';
@@ -393,6 +407,7 @@ class LLMClient {
     }
 
     prompt += `\n\nВАЖНО: Общайтесь на грамотном русском языке. Будьте эмпатичным и заботливым с пациентами, доказательным и структурным с врачами. Никаких пустых заглушек!`;
+    prompt += `\n\nОБЯЗАТЕЛЬНО заверши каждый клинический ответ дословным блоком:\n${MEDICAL_DISCLAIMER}`;
     return prompt;
   }
 
@@ -551,6 +566,17 @@ class LLMClient {
 - **Маршрутизация:** Очный осмотр дежурного терапевта / профильного специалиста по результатам физикального осмотра.`;
   }
 
+  withMedicalDisclaimer(text) {
+    return withMedicalDisclaimer(text);
+  }
+
+  deliverClinicalReply(text, onChunk, onComplete) {
+    const reply = this.withMedicalDisclaimer(text);
+    if (onChunk) onChunk(reply);
+    if (onComplete) onComplete(reply);
+    return reply;
+  }
+
   async streamChat(messages, engineContext = [], isEmergency = false, onChunk, onError, onComplete) {
     const lastUserQuery = (messages && messages.length > 0)
       ? (messages[messages.length - 1]?.content || '')
@@ -558,9 +584,11 @@ class LLMClient {
 
     // If client is completely offline, generate local consilium instantly
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      const offlineReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
-      onChunk(offlineReply);
-      onComplete(offlineReply);
+      this.deliverClinicalReply(
+        this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency),
+        onChunk,
+        onComplete
+      );
       return;
     }
 
@@ -577,17 +605,21 @@ class LLMClient {
       const hasKey = Boolean(this.config.apiKey && this.config.apiKey.trim());
       const hasCustomBase = Boolean(this.config.baseUrl && this.config.baseUrl.trim() && this.config.baseUrl !== 'https://text.pollinations.ai/openai/chat/completions');
       if (!hasKey && !hasCustomBase && !this.backendAvailable) {
-        const localReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
-        onChunk(localReply);
-        onComplete(localReply);
+        this.deliverClinicalReply(
+          this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency),
+          onChunk,
+          onComplete
+        );
         return;
       }
     }
 
     if ((this.config.provider === 'groq' || this.config.provider === 'openrouter') && !this.config.apiKey) {
-      const localReply = this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
-      onChunk(localReply);
-      onComplete(localReply);
+      this.deliverClinicalReply(
+        this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency),
+        onChunk,
+        onComplete
+      );
       return;
     }
 
@@ -643,8 +675,7 @@ class LLMClient {
           /^\s*\(?\s*ожидание/i.test(text);
 
         if (text && text.trim() && !isDegenerateNonStream) {
-          onChunk(text);
-          onComplete(text);
+          this.deliverClinicalReply(text, onChunk, onComplete);
           return;
         }
         throw new Error('Пустой или некорректный ответ от сервера');
@@ -720,7 +751,7 @@ class LLMClient {
         fullText.trim().toLowerCase() === '(waiting for the next message.)';
 
       if (!isDegenerate) {
-        onComplete(fullText);
+        this.deliverClinicalReply(fullText, onChunk, onComplete);
       } else {
         console.warn("Detected degenerate or truncated LLM output:", fullText);
         throw new Error('Некорректный или пустой ответ нейросети');
@@ -734,16 +765,14 @@ class LLMClient {
       // Stream broke mid-answer: keep the real model text instead of replacing it with the template
       if (fullText && fullText.trim().length >= 200) {
         const partial = fullText + '\n\n> [!IMPORTANT]\n> Связь с нейросетью прервалась — ответ может быть неполным. Повторите вопрос при необходимости.';
-        onChunk(partial);
-        onComplete(partial);
+        this.deliverClinicalReply(partial, onChunk, onComplete);
         return;
       }
 
       // Instant local Clinical Consilium fallback — zero freeze, but clearly labelled as a template
       const fallbackReply = '> [!IMPORTANT]\n> Нейросеть сейчас недоступна — показан **шаблонный ответ из локальной базы**, а не персональный разбор. Попробуйте отправить вопрос ещё раз через 20–30 секунд.\n\n'
         + this.generateLocalClinicalConsilium(lastUserQuery, engineContext, isEmergency);
-      onChunk(fallbackReply);
-      onComplete(fallbackReply);
+      this.deliverClinicalReply(fallbackReply, onChunk, onComplete);
     }
   }
 
@@ -786,9 +815,10 @@ class LLMClient {
 if (typeof window !== 'undefined') {
   window.LLMClient = LLMClient;
   window.MULTI_LLM_MODELS = MULTI_LLM_MODELS;
+  window.MEDICAL_DISCLAIMER = MEDICAL_DISCLAIMER;
   window.llmClient = new LLMClient();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { LLMClient, MULTI_LLM_MODELS };
+  module.exports = { LLMClient, MULTI_LLM_MODELS, MEDICAL_DISCLAIMER, withMedicalDisclaimer };
 }

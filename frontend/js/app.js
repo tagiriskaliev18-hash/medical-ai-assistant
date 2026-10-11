@@ -301,7 +301,9 @@ class MedicalApp {
           offlineResponse = `### 🔌 Режим офлайн (нет связи)\n\nИнтернет временно недоступен. Если есть прямая угроза жизни, **немедленно звоните 103 или 112** (экстренный вызов работает даже при нулевом балансе и без сим-карты).\n\nВы можете воспользоваться карточками первой помощи из меню быстрых запросов выше.`;
         }
 
-        const basePrefix = redFlagAlert ? '' : '';
+        if (window.llmClient && typeof window.llmClient.withMedicalDisclaimer === 'function') {
+          offlineResponse = window.llmClient.withMedicalDisclaimer(offlineResponse);
+        }
         this.finalizeMessage(doctorMsgEl, text, offlineResponse, offlineResponse);
       }, 300);
       return;
@@ -342,6 +344,9 @@ class MedicalApp {
               });
             }
 
+            if (fallbackText && window.llmClient && typeof window.llmClient.withMedicalDisclaimer === 'function') {
+              fallbackText = window.llmClient.withMedicalDisclaimer(fallbackText);
+            }
             const banner = redFlagAlert ? this.getEmergencyHeaderHtml(redFlagAlert) : '';
             const safeErr = this.escapeHtml(errMsg || 'Неизвестная ошибка');
             const errHtml = `

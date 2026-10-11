@@ -1,5 +1,14 @@
+# Direct dependencies for the API, the LLM proxy, and the test suite.
+# From the repository root:
+#   python -m pip install -r requirements.txt
+#
+# httpx  — outbound calls to the configured LLM provider (backend/app/services/llm_service.py)
+# httpx2 — required by starlette.testclient, which fastapi.testclient re-exports.
+#          Without it, TestClient falls back to httpx and emits StarletteDeprecationWarning.
+
 fastapi>=0.110.0
 uvicorn>=0.28.0
 httpx>=0.27.0
+httpx2>=2.0.0
 pydantic>=2.6.0
 python-dotenv>=1.0.0
